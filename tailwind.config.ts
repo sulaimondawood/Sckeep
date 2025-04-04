@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,22 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Food Waste Management System Custom Colors
+				success: {
+					DEFAULT: '#4CAF50',
+					light: '#81C784',
+					dark: '#388E3C',
+				},
+				warning: {
+					DEFAULT: '#FFC107',
+					light: '#FFE082',
+					dark: '#FFA000',
+				},
+				danger: {
+					DEFAULT: '#F44336',
+					light: '#E57373',
+					dark: '#D32F2F',
 				}
 			},
 			borderRadius: {
