@@ -14,9 +14,9 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-// Import logo images
-import darkLogo from '/lovable-uploads/51373901-4094-4b87-952f-a9d29b768c79.png';
-import lightLogo from '/lovable-uploads/12535e98-11c0-414f-b965-0b2c820cb2c1.png';
+// Import logo images - using relative paths from public folder
+import darkLogo from '../../assets/dark-logo.png';
+import lightLogo from '../../assets/light-logo.png';
 
 interface NavItemProps {
   icon: React.ElementType;
