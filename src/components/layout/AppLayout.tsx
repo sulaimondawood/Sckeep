@@ -14,6 +14,10 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
+// Import logo images
+import darkLogo from '/lovable-uploads/51373901-4094-4b87-952f-a9d29b768c79.png';
+import lightLogo from '/lovable-uploads/12535e98-11c0-414f-b965-0b2c820cb2c1.png';
+
 interface NavItemProps {
   icon: React.ElementType;
   label: string;
@@ -58,6 +62,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
     { icon: BarChart2, label: "Analytics", to: "/analytics" },
   ];
 
+  // Determine which logo to use based on color scheme preference
+  // This is a basic implementation; for proper dark mode support, 
+  // you might want to use a theme provider
+  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const logoSrc = isDarkMode ? darkLogo : lightLogo;
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Mobile sidebar toggle */}
@@ -80,11 +90,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-gray-100">
-            <h1 className="text-xl font-bold text-success-dark">
-              FoodWise Guardian
-            </h1>
-            <p className="text-sm text-gray-500">Smart Waste Management</p>
+          <div className="p-4 border-b border-gray-100 flex items-center justify-center">
+            {/* Logo in the center of the sidebar header */}
+            <div className="flex items-center justify-center w-full">
+              <img 
+                src={logoSrc} 
+                alt="Sckeep Logo" 
+                className="h-10 object-contain"
+              />
+            </div>
           </div>
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
