@@ -3,8 +3,14 @@ import { FoodItem } from "@/types/food";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, getExpiryStatus, getStatusColor } from "@/utils/expiryUtils";
-import { Trash, Edit } from 'lucide-react';
+import { Trash, Edit, MoreVertical } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 interface FoodItemCardProps {
   item: FoodItem;
@@ -25,11 +31,30 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) =
             <h3 className="font-medium">{item.name}</h3>
             <p className="text-sm text-gray-500">{item.category}</p>
           </div>
-          <Badge variant={status === 'expired' ? 'outline' : 'default'} className={statusColor}>
-            {status === 'expired' ? 'Expired' : 
-             status === 'danger' ? 'Critical' : 
-             status === 'warning' ? 'Soon' : 'Safe'}
-          </Badge>
+          <div className="flex items-center">
+            <Badge variant={status === 'expired' ? 'outline' : 'default'} className={statusColor}>
+              {status === 'expired' ? 'Expired' : 
+               status === 'danger' ? 'Critical' : 
+               status === 'warning' ? 'Soon' : 'Safe'}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 ml-2">
+                  <MoreVertical size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(item.id)}>
+                  <Edit size={16} className="mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(item.id)} className="text-destructive">
+                  <Trash size={16} className="mr-2" />
+                  Remove
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         
         <div className="mt-4 text-sm">
@@ -58,17 +83,6 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) =
         {item.notes && (
           <p className="mt-2 text-sm text-gray-500 italic">"{item.notes}"</p>
         )}
-        
-        <div className="mt-4 flex justify-end space-x-2">
-          <Button variant="outline" size="sm" onClick={() => onEdit(item.id)}>
-            <Edit size={16} className="mr-1" />
-            Edit
-          </Button>
-          <Button variant="destructive" size="sm" onClick={() => onDelete(item.id)}>
-            <Trash size={16} className="mr-1" />
-            Remove
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );
