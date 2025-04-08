@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Barcode } from 'lucide-react';
 import FoodItemCard from '@/components/food/FoodItemCard';
 import { useToast } from '@/hooks/use-toast';
 import { mockFoodItems } from '@/data/mockData';
@@ -35,6 +35,13 @@ const Inventory: React.FC = () => {
     });
   };
 
+  const handleAddNewItem = () => {
+    toast({
+      title: "Add New Item",
+      description: "Opening barcode scanner...",
+    });
+  };
+
   // Get unique categories
   const categories = ['all', ...new Set(foodItems.map(item => item.category))];
 
@@ -47,13 +54,12 @@ const Inventory: React.FC = () => {
   });
 
   return (
-    <div>
+    <div className="relative min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Inventory</h1>
           <p className="text-gray-500">Manage your food items</p>
         </div>
-        <Button>Add New Item</Button>
       </div>
 
       <div className="mb-6 flex flex-col md:flex-row gap-4">
@@ -99,6 +105,17 @@ const Inventory: React.FC = () => {
           <p className="text-gray-500">No items found matching your criteria</p>
         </div>
       )}
+      
+      {/* Floating action button */}
+      <Button
+        size="icon"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+        onClick={handleAddNewItem}
+        aria-label="Add new item"
+        title="Add new item"
+      >
+        <Barcode size={24} />
+      </Button>
     </div>
   );
 };
