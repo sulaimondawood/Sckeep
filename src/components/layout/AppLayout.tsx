@@ -70,8 +70,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Mobile sidebar toggle */}
-      <div className="lg:hidden fixed z-20 top-4 left-4">
+      {/* Mobile sidebar toggle - repositioned to left side and fixed */}
+      <div className="fixed z-30 top-4 left-4">
         <Button 
           variant="outline" 
           size="icon" 
@@ -85,7 +85,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-10 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
