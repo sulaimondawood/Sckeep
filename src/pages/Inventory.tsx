@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter, Barcode, RefreshCw } from 'lucide-react';
+import { Search, Filter, Barcode, RefreshCw, Package } from 'lucide-react';
 import FoodItemCard from '@/components/food/FoodItemCard';
 import { useToast } from '@/hooks/use-toast';
 import { mockFoodItems } from '@/data/mockData';
@@ -18,7 +17,6 @@ import { FoodItem } from '@/types/food';
 const Inventory: React.FC = () => {
   const [foodItems, setFoodItems] = useState(mockFoodItems);
   const [deletedItems, setDeletedItems] = useState<FoodItem[]>(() => {
-    // Try to load deleted items from localStorage
     const saved = localStorage.getItem('deletedItems');
     return saved ? JSON.parse(saved) : [];
   });
@@ -27,7 +25,6 @@ const Inventory: React.FC = () => {
   const [showDeleted, setShowDeleted] = useState(false);
   const { toast } = useToast();
 
-  // Save deleted items to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
   }, [deletedItems]);
@@ -40,12 +37,9 @@ const Inventory: React.FC = () => {
   };
 
   const handleDeleteItem = (id: string) => {
-    // Find the item to delete
     const itemToDelete = foodItems.find(item => item.id === id);
     if (itemToDelete) {
-      // Add to deleted items
       setDeletedItems(prev => [...prev, itemToDelete]);
-      // Remove from food items
       setFoodItems(foodItems.filter(item => item.id !== id));
       
       toast({
@@ -63,12 +57,9 @@ const Inventory: React.FC = () => {
   };
 
   const handleRestoreItem = (id: string) => {
-    // Find the item to restore
     const itemToRestore = deletedItems.find(item => item.id === id);
     if (itemToRestore) {
-      // Add back to food items
       setFoodItems(prev => [...prev, itemToRestore]);
-      // Remove from deleted items
       setDeletedItems(deletedItems.filter(item => item.id !== id));
       
       toast({
@@ -91,10 +82,8 @@ const Inventory: React.FC = () => {
     setShowDeleted(!showDeleted);
   };
 
-  // Get unique categories
   const categories = ['all', ...new Set(foodItems.map(item => item.category))];
 
-  // Filter items
   const filteredItems = foodItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           item.category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -158,7 +147,6 @@ const Inventory: React.FC = () => {
       )}
 
       {!showDeleted ? (
-        // Regular inventory view
         filteredItems.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredItems.map((item) => (
@@ -176,7 +164,6 @@ const Inventory: React.FC = () => {
           </div>
         )
       ) : (
-        // Recently deleted items view
         deletedItems.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {deletedItems.map((item) => (
@@ -219,7 +206,6 @@ const Inventory: React.FC = () => {
         )
       )}
       
-      {/* Floating action button - only show in inventory view */}
       {!showDeleted && (
         <Button
           size="icon"

@@ -12,9 +12,7 @@ import {
   Moon,
   Sun,
   Clock,
-  Trash2,
-  ChevronDown,
-  ChevronUp
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -24,6 +22,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Input } from '@/components/ui/input';
 
 // Import logo images - using relative paths from public folder
 import darkLogo from '../../assets/dark-logo.png';
@@ -61,15 +60,16 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     // Check localStorage or system preference
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark' || 
            (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
-  const [notificationTime, setNotificationTime] = useState('1day');
+  const [notificationTime, setNotificationTime] = useState('08:00');
+  const [notificationTimeOpen, setNotificationTimeOpen] = useState(false);
   const [notificationFrequency, setNotificationFrequency] = useState('daily');
+  const [notificationFrequencyOpen, setNotificationFrequencyOpen] = useState(false);
   
   // Apply theme when darkMode changes
   useEffect(() => {
@@ -88,10 +88,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
-  };
-
-  const toggleSettings = () => {
-    setSettingsOpen(!settingsOpen);
   };
 
   const navItems = [
@@ -149,10 +145,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
               />
             ))}
             
-            {/* Settings Accordion */}
+            {/* Settings Accordion - removed dropdown arrow */}
             <Accordion type="single" collapsible className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <AccordionItem value="settings" className="border-none">
-                <AccordionTrigger className="hover:no-underline p-0">
+                <AccordionTrigger className="hover:no-underline p-0 [&>svg]:hidden">
                   <Button
                     variant="ghost"
                     className={cn(
@@ -177,47 +173,73 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
                     />
                   </div>
                   
-                  {/* Notification Settings */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium mb-2 flex items-center">
-                      <Clock size={16} className="mr-2" />
-                      Notification Time
-                    </h4>
-                    <RadioGroup value={notificationTime} onValueChange={setNotificationTime} className="ml-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="12hours" id="12hours" />
-                        <Label htmlFor="12hours">12 hours before expiry</Label>
+                  {/* Notification Time - Collapsible */}
+                  <Collapsible
+                    open={notificationTimeOpen}
+                    onOpenChange={setNotificationTimeOpen}
+                    className="mb-4"
+                  >
+                    <CollapsibleTrigger className="flex items-center justify-between w-full mb-2 text-sm font-medium">
+                      <div className="flex items-center">
+                        <Clock size={16} className="mr-2" />
+                        <span>Notification Time</span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="1day" id="1day" />
-                        <Label htmlFor="1day">1 day before expiry</Label>
+                      <div>
+                        {notificationTimeOpen ? 
+                          <ChevronUp size={16} /> : 
+                          <ChevronDown size={16} />
+                        }
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="3days" id="3days" />
-                        <Label htmlFor="3days">3 days before expiry</Label>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="ml-2 mt-2">
+                        <Label htmlFor="notification-time" className="block mb-1">Daily notification time:</Label>
+                        <Input
+                          id="notification-time"
+                          type="time"
+                          value={notificationTime}
+                          onChange={(e) => setNotificationTime(e.target.value)}
+                          className="w-full"
+                        />
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="1week" id="1week" />
-                        <Label htmlFor="1week">1 week before expiry</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                   
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium mb-2">Notification Frequency</h4>
-                    <ToggleGroup 
-                      type="single" 
-                      value={notificationFrequency}
-                      onValueChange={(value) => {
-                        if (value) setNotificationFrequency(value);
-                      }}
-                      className="w-full grid grid-cols-3 gap-1 ml-2"
-                    >
-                      <ToggleGroupItem value="daily" className="text-xs">Daily</ToggleGroupItem>
-                      <ToggleGroupItem value="weekly" className="text-xs">Weekly</ToggleGroupItem>
-                      <ToggleGroupItem value="none" className="text-xs">None</ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
+                  {/* Notification Frequency - Collapsible */}
+                  <Collapsible
+                    open={notificationFrequencyOpen}
+                    onOpenChange={setNotificationFrequencyOpen}
+                    className="mb-4"
+                  >
+                    <CollapsibleTrigger className="flex items-center justify-between w-full mb-2 text-sm font-medium">
+                      <div className="flex items-center">
+                        <Bell size={16} className="mr-2" />
+                        <span>Notification Frequency</span>
+                      </div>
+                      <div>
+                        {notificationFrequencyOpen ? 
+                          <ChevronUp size={16} /> : 
+                          <ChevronDown size={16} />
+                        }
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="ml-2 mt-2">
+                        <ToggleGroup 
+                          type="single" 
+                          value={notificationFrequency}
+                          onValueChange={(value) => {
+                            if (value) setNotificationFrequency(value);
+                          }}
+                          className="w-full grid grid-cols-3 gap-1"
+                        >
+                          <ToggleGroupItem value="daily" className="text-xs">Daily</ToggleGroupItem>
+                          <ToggleGroupItem value="weekly" className="text-xs">Weekly</ToggleGroupItem>
+                          <ToggleGroupItem value="none" className="text-xs">None</ToggleGroupItem>
+                        </ToggleGroup>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                   
                   {/* Recently Deleted Items */}
                   <Link to="/deleted-items">
