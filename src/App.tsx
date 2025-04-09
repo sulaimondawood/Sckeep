@@ -50,6 +50,14 @@ const App = () => (
               </AppWrapper>
             }
           />
+          <Route
+            path="/deleted-items"
+            element={
+              <AppWrapper>
+                <Inventory />
+              </AppWrapper>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
