@@ -109,10 +109,10 @@ const Inventory: React.FC = () => {
       {/* Floating action button */}
       <Button
         size="icon"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow animate-fade-in"
         onClick={handleAddNewItem}
-        aria-label="Add new item"
-        title="Add new item"
+        aria-label="Add new item by scanning barcode"
+        title="Scan barcode to add new item"
       >
         <Barcode size={24} />
       </Button>
