@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import FoodItemCard from '@/components/food/FoodItemCard';
 import { useToast } from '@/hooks/use-toast';
 import { mockFoodItems } from '@/data/mockData';
 import { FoodItem } from '@/types/food';
+import { Package } from 'lucide-react';
 
 const Inventory: React.FC = () => {
   const [foodItems, setFoodItems] = useState(mockFoodItems);
