@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -12,7 +11,9 @@ import {
   Moon,
   Sun,
   Clock,
-  Trash2
+  Trash2,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -79,7 +80,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
-    }
+      }
   }, [darkMode]);
 
   const toggleSidebar = () => {
