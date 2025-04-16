@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -21,15 +20,32 @@ import {
   mockNotifications 
 } from '@/data/mockData';
 import { getExpiryStatus } from '@/utils/expiryUtils';
-import { ExpiryStatus } from '@/types/food';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ExpiryStatus, FoodItem } from '@/types/food';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 
 const Dashboard: React.FC = () => {
-  const [foodItems, setFoodItems] = useState(mockFoodItems);
+  const [foodItems, setFoodItems] = useState<FoodItem[]>(() => {
+    const saved = localStorage.getItem('foodItems');
+    return saved ? JSON.parse(saved) : mockFoodItems;
+  });
+  
+  const [deletedItems, setDeletedItems] = useState<FoodItem[]>(() => {
+    const saved = localStorage.getItem('deletedItems');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
   const [notifications] = useState(mockNotifications);
   const { toast } = useToast();
+
+  useEffect(() => {
+    localStorage.setItem('foodItems', JSON.stringify(foodItems));
+  }, [foodItems]);
+
+  useEffect(() => {
+    localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
+  }, [deletedItems]);
 
   const handleEditItem = (id: string) => {
     toast({
@@ -39,16 +55,20 @@ const Dashboard: React.FC = () => {
   };
 
   const handleDeleteItem = (id: string) => {
-    setFoodItems(foodItems.filter(item => item.id !== id));
-    toast({
-      title: "Item Removed",
-      description: "Food item has been removed from your inventory.",
-    });
+    const itemToDelete = foodItems.find(item => item.id === id);
+    if (itemToDelete) {
+      setDeletedItems(prev => [...prev, itemToDelete]);
+      setFoodItems(foodItems.filter(item => item.id !== id));
+      
+      toast({
+        title: "Item Removed",
+        description: "Food item has been moved to recently deleted items.",
+      });
+    }
   };
 
   const unreadNotifications = notifications.filter(n => !n.read);
   
-  // Filter items based on expiry status
   const filterItemsByStatus = (status: ExpiryStatus) => {
     return foodItems.filter(item => getExpiryStatus(item.expiryDate) === status);
   };
@@ -58,7 +78,6 @@ const Dashboard: React.FC = () => {
   const warningItems = filterItemsByStatus('warning');
   const safeItems = filterItemsByStatus('safe');
 
-  // Data for the donut chart
   const chartData = [
     { name: 'Safe', value: safeItems.length, color: '#10B981', status: 'safe' },
     { name: 'Expiring Soon', value: warningItems.length, color: '#FBBF24', status: 'warning' },
@@ -66,7 +85,6 @@ const Dashboard: React.FC = () => {
     { name: 'Expired', value: expiredItems.length, color: '#9CA3AF', status: 'expired' }
   ];
 
-  // Function to render status details when hovering over chart segments
   const renderStatusDetails = (status: ExpiryStatus) => {
     const items = filterItemsByStatus(status);
     const statusText = {
@@ -113,7 +131,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Donut Chart replacing the summary cards */}
       <div className="mb-6">
         <Card>
           <CardHeader>

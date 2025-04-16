@@ -54,7 +54,7 @@ const App = () => (
             path="/deleted-items"
             element={
               <AppWrapper>
-                <Inventory />
+                <Inventory showDeleted={true} />
               </AppWrapper>
             }
           />

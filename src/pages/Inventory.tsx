@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,16 +15,30 @@ import { useToast } from '@/hooks/use-toast';
 import { mockFoodItems } from '@/data/mockData';
 import { FoodItem } from '@/types/food';
 
-const Inventory: React.FC = () => {
-  const [foodItems, setFoodItems] = useState(mockFoodItems);
+interface InventoryProps {
+  showDeleted?: boolean;
+}
+
+const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
+  const [foodItems, setFoodItems] = useState<FoodItem[]>(() => {
+    // Load food items from localStorage, fall back to mockData if none
+    const saved = localStorage.getItem('foodItems');
+    return saved ? JSON.parse(saved) : mockFoodItems;
+  });
+  
   const [deletedItems, setDeletedItems] = useState<FoodItem[]>(() => {
     const saved = localStorage.getItem('deletedItems');
     return saved ? JSON.parse(saved) : [];
   });
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [showDeleted, setShowDeleted] = useState(false);
   const { toast } = useToast();
+
+  // Save to localStorage whenever items change
+  useEffect(() => {
+    localStorage.setItem('foodItems', JSON.stringify(foodItems));
+  }, [foodItems]);
 
   useEffect(() => {
     localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
@@ -78,10 +93,6 @@ const Inventory: React.FC = () => {
     });
   };
 
-  const toggleDeletedItems = () => {
-    setShowDeleted(!showDeleted);
-  };
-
   const categories = ['all', ...new Set(foodItems.map(item => item.category))];
 
   const filteredItems = foodItems.filter(item => {
@@ -96,25 +107,30 @@ const Inventory: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">{showDeleted ? "Recently Deleted" : "Inventory"}</h1>
-          <p className="text-gray-500 dark:text-gray-400">{showDeleted ? "Restore your deleted food items" : "Manage your food items"}</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            {showDeleted ? "Restore your deleted food items" : "Manage your food items"}
+          </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={toggleDeletedItems}
-          className="flex items-center gap-2"
-        >
-          {showDeleted ? (
-            <>
-              <Package size={16} />
-              View Inventory
-            </>
-          ) : (
-            <>
-              <RefreshCw size={16} />
-              Recently Deleted
-            </>
-          )}
-        </Button>
+        {!showDeleted && (
+          <Button
+            variant="outline"
+            onClick={() => window.location.href = '/deleted-items'}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw size={16} />
+            Recently Deleted
+          </Button>
+        )}
+        {showDeleted && (
+          <Button
+            variant="outline"
+            onClick={() => window.location.href = '/inventory'}
+            className="flex items-center gap-2"
+          >
+            <Package size={16} />
+            View Inventory
+          </Button>
+        )}
       </div>
 
       {!showDeleted && (
