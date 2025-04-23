@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -26,7 +25,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 
-// Import logo images - using relative paths from public folder
+// Import logo images - using absolute paths from public folder
 import darkLogo from '../../assets/dark-logo.png';
 import lightLogo from '../../assets/light-logo.png';
 
