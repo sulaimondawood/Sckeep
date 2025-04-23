@@ -3,6 +3,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Lightbulb } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 export const WasteReductionTips = () => {
   const tips = [
@@ -35,13 +42,21 @@ export const WasteReductionTips = () => {
             Waste Reduction Tips
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {tips.map((tip) => (
-            <Alert key={tip.title}>
-              <AlertTitle>{tip.title}</AlertTitle>
-              <AlertDescription>{tip.description}</AlertDescription>
-            </Alert>
-          ))}
+        <CardContent>
+          <Carousel className="w-full max-w-xs mx-auto">
+            <CarouselContent>
+              {tips.map((tip) => (
+                <CarouselItem key={tip.title}>
+                  <Alert>
+                    <AlertTitle>{tip.title}</AlertTitle>
+                    <AlertDescription>{tip.description}</AlertDescription>
+                  </Alert>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
         </CardContent>
       </Card>
 

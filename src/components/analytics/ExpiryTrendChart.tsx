@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useTheme } from 'next-themes';
 
 interface ExpiryTrendChartProps {
   timeframe: 'day' | 'month' | 'year';
@@ -37,7 +38,16 @@ const generateMockData = (timeframe: 'day' | 'month' | 'year') => {
 };
 
 export const ExpiryTrendChart: React.FC<ExpiryTrendChartProps> = ({ timeframe }) => {
+  const { theme } = useTheme();
   const data = generateMockData(timeframe);
+
+  const getColors = () => {
+    return theme === 'dark' 
+      ? { expired: '#ef4444', expiredFill: '#991b1b', atRisk: '#f59e0b', atRiskFill: '#92400e' }
+      : { expired: '#ef4444', expiredFill: '#fee2e2', atRisk: '#f59e0b', atRiskFill: '#fef3c7' };
+  };
+
+  const colors = getColors();
 
   return (
     <div className="w-full h-[300px]">
@@ -65,15 +75,15 @@ export const ExpiryTrendChart: React.FC<ExpiryTrendChartProps> = ({ timeframe })
             type="monotone"
             dataKey="expired"
             stackId="1"
-            stroke="#ef4444"
-            fill="#fee2e2"
+            stroke={colors.expired}
+            fill={colors.expiredFill}
           />
           <Area
             type="monotone"
             dataKey="atRisk"
             stackId="1"
-            stroke="#f59e0b"
-            fill="#fef3c7"
+            stroke={colors.atRisk}
+            fill={colors.atRiskFill}
           />
         </AreaChart>
       </ResponsiveContainer>
