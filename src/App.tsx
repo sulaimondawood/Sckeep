@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,11 +8,11 @@ import AppLayout from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import Notifications from "./pages/Notifications";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Wrapper component to provide the current path to AppLayout
 const AppWrapper = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   return <AppLayout currentPath={location.pathname}>{children}</AppLayout>;
@@ -47,6 +46,14 @@ const App = () => (
             element={
               <AppWrapper>
                 <Notifications />
+              </AppWrapper>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <AppWrapper>
+                <Analytics />
               </AppWrapper>
             }
           />
