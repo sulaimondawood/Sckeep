@@ -8,41 +8,57 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from "@/hooks/use-toast";
 
 const Notifications: React.FC = () => {
   const [notifications, setNotifications] = useState(mockNotifications);
+  const { toast } = useToast();
 
   const markAsRead = (id: string) => {
     setNotifications(notifications.map(notif => 
       notif.id === id ? { ...notif, read: true } : notif
     ));
+    toast({
+      title: "Notification marked as read",
+      duration: 2000,
+    });
   };
 
   const deleteNotification = (id: string) => {
     setNotifications(notifications.filter(notif => notif.id !== id));
+    toast({
+      title: "Notification deleted",
+      duration: 2000,
+    });
   };
 
   const markAllAsRead = () => {
     setNotifications(notifications.map(notif => ({ ...notif, read: true })));
+    toast({
+      title: "All notifications marked as read",
+      duration: 2000,
+    });
   };
 
   const unreadNotifications = notifications.filter(notif => !notif.read);
   const readNotifications = notifications.filter(notif => notif.read);
 
   const NotificationItem = ({ notification }: { notification: typeof notifications[0] }) => (
-    <Card className={`mb-3 ${notification.read ? 'bg-gray-50' : 'bg-white border-l-4 border-l-primary'}`}>
+    <Card className={`mb-3 transition-colors ${notification.read 
+      ? 'bg-gray-50 dark:bg-gray-800/40 dark:border-gray-700' 
+      : 'bg-white dark:bg-gray-800 border-l-4 border-l-primary dark:border-l-purple-400'}`}>
       <CardContent className="p-4 flex justify-between items-start">
         <div className="flex items-start">
           <div className="mr-4 mt-1">
             {notification.type === 'expiry' ? (
-              <Bell className="h-5 w-5 text-warning-dark" />
+              <Bell className="h-5 w-5 text-warning-dark dark:text-warning-light" />
             ) : (
-              <Settings className="h-5 w-5 text-primary" />
+              <Settings className="h-5 w-5 text-primary dark:text-purple-300" />
             )}
           </div>
           <div>
-            <p className="text-sm font-medium">{notification.message}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm font-medium dark:text-gray-200">{notification.message}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {new Date(notification.date).toLocaleString()}
             </p>
           </div>
@@ -53,7 +69,7 @@ const Notifications: React.FC = () => {
               variant="ghost" 
               size="sm" 
               onClick={() => markAsRead(notification.id)}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 dark:hover:bg-gray-700 dark:text-gray-300"
             >
               <Check className="h-4 w-4" />
             </Button>
@@ -62,7 +78,7 @@ const Notifications: React.FC = () => {
             variant="ghost" 
             size="sm" 
             onClick={() => deleteNotification(notification.id)}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 dark:hover:bg-gray-700 dark:text-gray-300"
           >
             <Trash className="h-4 w-4" />
           </Button>
@@ -75,46 +91,51 @@ const Notifications: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Notifications</h1>
-          <p className="text-gray-500">Stay updated on your food inventory</p>
+          <h1 className="text-2xl font-bold dark:text-white">Notifications</h1>
+          <p className="text-gray-500 dark:text-gray-400">Stay updated on your food inventory</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="mr-2">
+          <Badge variant="outline" className="mr-2 dark:border-gray-600 dark:text-gray-300">
             {unreadNotifications.length} unread
           </Badge>
-          <Button variant="outline" onClick={markAllAsRead} disabled={unreadNotifications.length === 0}>
+          <Button 
+            variant="outline" 
+            onClick={markAllAsRead} 
+            disabled={unreadNotifications.length === 0}
+            className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
             Mark all as read
           </Button>
         </div>
       </div>
 
-      <div className="mb-6 bg-white p-4 rounded-lg border">
-        <h2 className="font-medium mb-3">Notification Preferences</h2>
+      <div className="mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <h2 className="font-medium mb-3 dark:text-white">Notification Preferences</h2>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label htmlFor="expiry-notifications">Expiry Notifications</Label>
+            <Label htmlFor="expiry-notifications" className="dark:text-gray-300">Expiry Notifications</Label>
             <Switch id="expiry-notifications" defaultChecked />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="system-notifications">System Notifications</Label>
+            <Label htmlFor="system-notifications" className="dark:text-gray-300">System Notifications</Label>
             <Switch id="system-notifications" defaultChecked />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="push-notifications">Push Notifications</Label>
+            <Label htmlFor="push-notifications" className="dark:text-gray-300">Push Notifications</Label>
             <Switch id="push-notifications" />
           </div>
         </div>
       </div>
 
-      <Tabs defaultValue="unread">
-        <TabsList>
-          <TabsTrigger value="unread">
+      <Tabs defaultValue="unread" className="dark:border-gray-700">
+        <TabsList className="dark:bg-gray-800">
+          <TabsTrigger value="unread" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white dark:text-gray-300">
             Unread ({unreadNotifications.length})
           </TabsTrigger>
-          <TabsTrigger value="all">
+          <TabsTrigger value="all" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white dark:text-gray-300">
             All ({notifications.length})
           </TabsTrigger>
-          <TabsTrigger value="read">
+          <TabsTrigger value="read" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white dark:text-gray-300">
             Read ({readNotifications.length})
           </TabsTrigger>
         </TabsList>
@@ -125,7 +146,7 @@ const Notifications: React.FC = () => {
               <NotificationItem key={notification.id} notification={notification} />
             ))
           ) : (
-            <p className="text-center text-gray-500 py-8">No unread notifications</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-8">No unread notifications</p>
           )}
         </TabsContent>
         
@@ -141,7 +162,7 @@ const Notifications: React.FC = () => {
               <NotificationItem key={notification.id} notification={notification} />
             ))
           ) : (
-            <p className="text-center text-gray-500 py-8">No read notifications</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 py-8">No read notifications</p>
           )}
         </TabsContent>
       </Tabs>
