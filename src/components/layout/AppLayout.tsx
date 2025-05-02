@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -105,6 +104,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   // Determine which logo to use based on current theme
   const logoSrc = darkMode ? darkLogo : lightLogo;
 
+  // Function to check if a route is active - exact match for home, startsWith for others
+  const isRouteActive = (path: string) => {
+    if (path === '/') {
+      return currentPath === '/';
+    }
+    return currentPath === path || currentPath.startsWith(`${path}/`);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 dark:text-gray-100 flex">
       {/* Mobile sidebar toggle */}
@@ -146,7 +153,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 icon={item.icon}
                 label={item.label}
                 to={item.to}
-                active={currentPath === item.to}
+                active={isRouteActive(item.to)}
               />
             ))}
             
@@ -252,7 +259,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       variant="ghost"
                       className={cn(
                         "w-full justify-start gap-2 mb-1 mt-3",
-                        currentPath === "/deleted-items" ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
+                        isRouteActive("/deleted-items") ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
                       )}
                     >
                       <Trash2 size={18} />
