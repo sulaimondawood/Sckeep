@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
@@ -24,13 +24,31 @@ export const WasteReductionTips = () => {
     {
       title: "Proper Storage",
       description: "Learn the optimal storage conditions for different foods to maximize their shelf life."
+    },
+    {
+      title: "Freeze Extras",
+      description: "Freeze leftovers or excess fresh food before they spoil. Label them with the date to track their storage time."
+    },
+    {
+      title: "Understand Date Labels",
+      description: "'Best by' doesn't mean unsafe after that date. Learn to tell when food is actually spoiled versus just past its prime."
+    },
+    {
+      title: "Creative Leftovers",
+      description: "Transform leftovers into new meals like soups, stir-fries, or casseroles instead of throwing them away."
+    },
+    {
+      title: "Compost Food Scraps",
+      description: "Start composting inedible food scraps to reduce landfill waste and create nutrient-rich soil for plants."
     }
   ];
 
   const insights = [
     "Most food waste occurs in dairy products",
     "Weekend shopping leads to more waste",
-    "Items with longer shelf life are less likely to expire"
+    "Items with longer shelf life are less likely to expire",
+    "Improper refrigerator organization increases waste",
+    "Buying in bulk without a plan often leads to spoilage"
   ];
 
   return (
@@ -54,8 +72,10 @@ export const WasteReductionTips = () => {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
+            <div className="flex items-center justify-center mt-4 gap-2">
+              <CarouselPrevious className="static transform-none h-8 w-8 opacity-70 hover:opacity-100" />
+              <CarouselNext className="static transform-none h-8 w-8 opacity-70 hover:opacity-100" />
+            </div>
           </Carousel>
         </CardContent>
       </Card>
