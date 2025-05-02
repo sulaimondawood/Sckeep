@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Package, 
@@ -56,10 +57,13 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, to, active, onClic
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  currentPath: string;
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
+const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  // Use useLocation to get current path instead of relying on the prop
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(() => {
     // Check localStorage or system preference
@@ -246,7 +250,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, currentPath }) => {
                   <Link to="/deleted-items">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start gap-2 mb-1 mt-3"
+                      className={cn(
+                        "w-full justify-start gap-2 mb-1 mt-3",
+                        currentPath === "/deleted-items" ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
+                      )}
                     >
                       <Trash2 size={18} />
                       <span>Recently Deleted</span>

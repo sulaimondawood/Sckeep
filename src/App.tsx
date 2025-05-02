@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import AppLayout from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
@@ -12,11 +13,6 @@ import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-
-const AppWrapper = ({ children }: { children: React.ReactNode }) => {
-  const location = useLocation();
-  return <AppLayout currentPath={location.pathname}>{children}</AppLayout>;
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,41 +24,41 @@ const App = () => (
           <Route
             path="/"
             element={
-              <AppWrapper>
+              <AppLayout>
                 <Dashboard />
-              </AppWrapper>
+              </AppLayout>
             }
           />
           <Route
             path="/inventory"
             element={
-              <AppWrapper>
+              <AppLayout>
                 <Inventory />
-              </AppWrapper>
+              </AppLayout>
             }
           />
           <Route
             path="/notifications"
             element={
-              <AppWrapper>
+              <AppLayout>
                 <Notifications />
-              </AppWrapper>
+              </AppLayout>
             }
           />
           <Route
             path="/analytics"
             element={
-              <AppWrapper>
+              <AppLayout>
                 <Analytics />
-              </AppWrapper>
+              </AppLayout>
             }
           />
           <Route
             path="/deleted-items"
             element={
-              <AppWrapper>
+              <AppLayout>
                 <Inventory showDeleted={true} />
-              </AppWrapper>
+              </AppLayout>
             }
           />
           <Route path="*" element={<NotFound />} />
