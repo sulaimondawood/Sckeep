@@ -43,8 +43,20 @@ export const ExpiryTrendChart: React.FC<ExpiryTrendChartProps> = ({ timeframe })
 
   const getColors = () => {
     return theme === 'dark' 
-      ? { expired: '#ef4444', expiredFill: '#991b1b', atRisk: '#f59e0b', atRiskFill: '#92400e' }
-      : { expired: '#ef4444', expiredFill: '#fee2e2', atRisk: '#f59e0b', atRiskFill: '#fef3c7' };
+      ? { 
+          expired: '#F97316', // Bright orange for better visibility in dark mode
+          expiredFill: 'rgba(249, 115, 22, 0.3)', // Semi-transparent for area fill
+          atRisk: '#8B5CF6', // Vivid purple for contrast
+          atRiskFill: 'rgba(139, 92, 246, 0.3)', // Semi-transparent for area fill
+          gridLines: '#444444',
+        }
+      : { 
+          expired: '#ef4444', 
+          expiredFill: '#fee2e2', 
+          atRisk: '#8B5CF6',  // Vivid purple
+          atRiskFill: '#f5f3ff', 
+          gridLines: '#e5e5e5',
+        };
   };
 
   const colors = getColors();
@@ -56,12 +68,23 @@ export const ExpiryTrendChart: React.FC<ExpiryTrendChartProps> = ({ timeframe })
           data={data}
           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
         >
+          <defs>
+            <linearGradient id="expiredFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={colors.expired} stopOpacity={0.8}/>
+              <stop offset="95%" stopColor={colors.expired} stopOpacity={0.2}/>
+            </linearGradient>
+            <linearGradient id="atRiskFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={colors.atRisk} stopOpacity={0.8}/>
+              <stop offset="95%" stopColor={colors.atRisk} stopOpacity={0.2}/>
+            </linearGradient>
+          </defs>
           <XAxis 
             dataKey="date"
             stroke="#888888"
             fontSize={12}
             tickLine={false}
             axisLine={false}
+            tick={{ fill: theme === 'dark' ? '#e5e5e5' : '#333333' }}
           />
           <YAxis
             stroke="#888888"
@@ -69,21 +92,34 @@ export const ExpiryTrendChart: React.FC<ExpiryTrendChartProps> = ({ timeframe })
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => `${value}`}
+            tick={{ fill: theme === 'dark' ? '#e5e5e5' : '#333333' }}
           />
-          <Tooltip />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: theme === 'dark' ? '#333' : '#fff',
+              borderColor: colors.gridLines,
+              color: theme === 'dark' ? '#fff' : '#333',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }} 
+          />
           <Area
             type="monotone"
             dataKey="expired"
             stackId="1"
             stroke={colors.expired}
-            fill={colors.expiredFill}
+            strokeWidth={2}
+            fill="url(#expiredFill)"
+            name="Expired Items"
           />
           <Area
             type="monotone"
             dataKey="atRisk"
             stackId="1"
             stroke={colors.atRisk}
-            fill={colors.atRiskFill}
+            strokeWidth={2}
+            fill="url(#atRiskFill)"
+            name="At Risk Items"
           />
         </AreaChart>
       </ResponsiveContainer>
