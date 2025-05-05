@@ -60,20 +60,20 @@ const Signup = () => {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-slate-50 dark:bg-gray-900 p-4">
-      <div className="max-w-md w-full space-y-8">
+      <div className="w-full max-w-3xl space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-6">
             <img src={logoSrc} alt="Sckeep Logo" className="h-16 object-contain" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4 w-[70%] mx-auto">
             Welcome to <span className="inline-flex items-center">
-              <img src={logoSrc} alt="Sckeep" className="h-8 ml-1" />
+              <img src={logoSrc} alt="Sckeep" className="h-8 md:h-10 ml-1" />
             </span>
           </h1>
-          <p className="text-muted-foreground">Create an account to get started</p>
+          <p className="text-muted-foreground w-[70%] mx-auto">Create an account to get started</p>
         </div>
 
-        <Card>
+        <Card className="max-w-md mx-auto">
           <CardHeader>
             <CardTitle>Sign Up</CardTitle>
             <CardDescription>Enter your details to create an account</CardDescription>
