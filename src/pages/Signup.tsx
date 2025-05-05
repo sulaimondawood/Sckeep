@@ -39,10 +39,10 @@ const Signup = () => {
     try {
       setIsLoading(true);
       // This is a placeholder for actual signup logic
-      // In a real app, you would connect this to your auth provider
       
       setTimeout(() => {
-        // Mock successful signup
+        // Set authentication flag in localStorage
+        localStorage.setItem('authenticated', 'true');
         toast.success('Account created successfully!');
         navigate('/');
       }, 1000);
@@ -55,32 +55,34 @@ const Signup = () => {
 
   const handleGoogleSignup = () => {
     // This is a placeholder for Google authentication
-    toast.info('Google signup would be implemented here');
+    localStorage.setItem('authenticated', 'true');
+    toast.success('Google signup successful!');
+    navigate('/');
   };
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-slate-50 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-3xl space-y-8">
+      <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <img src={logoSrc} alt="Sckeep Logo" className="h-16 object-contain" />
+          <div className="flex justify-center mb-4">
+            <img src={logoSrc} alt="Sckeep Logo" className="h-12 object-contain" />
           </div>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4 w-[70%] mx-auto">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 w-[70%] mx-auto">
             Welcome to <span className="inline-flex items-center">
-              <img src={logoSrc} alt="Sckeep" className="h-8 md:h-10 ml-1" />
+              <img src={logoSrc} alt="Sckeep" className="h-6 md:h-8 ml-1" />
             </span>
           </h1>
-          <p className="text-muted-foreground w-[70%] mx-auto">Create an account to get started</p>
+          <p className="text-sm text-muted-foreground w-[70%] mx-auto">Create an account to get started</p>
         </div>
 
-        <Card className="max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle>Sign Up</CardTitle>
+        <Card className="w-full mx-auto shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl">Sign Up</CardTitle>
             <CardDescription>Enter your details to create an account</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="space-y-2">
+            <form onSubmit={handleSignup} className="space-y-3">
+              <div className="space-y-1">
                 <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -95,7 +97,7 @@ const Signup = () => {
                 </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -110,7 +112,7 @@ const Signup = () => {
                 </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -125,7 +127,7 @@ const Signup = () => {
                 <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
               </div>
               
-              <div className="flex items-center space-x-2 my-4">
+              <div className="flex items-center space-x-2 my-2">
                 <Checkbox 
                   id="terms" 
                   checked={acceptTerms}
@@ -133,7 +135,7 @@ const Signup = () => {
                 />
                 <label
                   htmlFor="terms"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   I accept the <Link to="/terms" className="text-primary hover:underline">terms and conditions</Link>
                 </label>
@@ -144,12 +146,12 @@ const Signup = () => {
               </Button>
             </form>
             
-            <div className="relative my-4">
+            <div className="relative my-3">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-gray-300 dark:border-gray-700" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or continue with</span>
+                <span className="bg-card px-2 text-muted-foreground">or</span>
               </div>
             </div>
             
@@ -182,7 +184,7 @@ const Signup = () => {
             </Button>
           </CardContent>
           <CardFooter>
-            <div className="text-center w-full text-sm">
+            <div className="text-center w-full text-xs">
               Already have an account?{" "}
               <Link to="/login" className="font-medium text-primary hover:underline">
                 Sign in
