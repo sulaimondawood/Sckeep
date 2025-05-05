@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -24,6 +25,12 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 
 // Import logo images - using absolute paths from public folder
 import darkLogo from '../../assets/dark-logo.png';
@@ -74,6 +81,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [notificationTimeOpen, setNotificationTimeOpen] = useState(false);
   const [notificationFrequency, setNotificationFrequency] = useState('daily');
   const [notificationFrequencyOpen, setNotificationFrequencyOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   
   // Apply theme when darkMode changes
   useEffect(() => {
@@ -157,24 +165,33 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               />
             ))}
             
-            {/* Settings Accordion - removed dropdown arrow */}
-            <Accordion type="single" collapsible className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <AccordionItem value="settings" className="border-none">
-                <AccordionTrigger className="hover:no-underline p-0 [&>svg]:hidden">
+            {/* Settings with dropdown */}
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-2 mb-1",
-                      currentPath === "/settings" ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
+                      "w-full justify-between gap-2 mb-1",
+                      isRouteActive("/settings") ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
                     )}
                   >
-                    <Settings size={18} />
-                    <span>Settings</span>
+                    <div className="flex items-center">
+                      <Settings size={18} className="mr-2" />
+                      <span>Settings</span>
+                    </div>
+                    <ChevronDown 
+                      size={16} 
+                      className={cn(
+                        "transition-transform duration-200",
+                        settingsOpen ? "rotate-180" : ""
+                      )} 
+                    />
                   </Button>
-                </AccordionTrigger>
-                <AccordionContent className="px-2 pt-2">
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   {/* Dark Mode Toggle */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between px-3 py-2">
                     <div className="flex items-center space-x-2">
                       {darkMode ? <Moon size={16} /> : <Sun size={16} />}
                       <span>Dark Mode</span>
@@ -185,13 +202,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     />
                   </div>
                   
-                  {/* Notification Time - Collapsible */}
+                  {/* Notification Time */}
                   <Collapsible
                     open={notificationTimeOpen}
                     onOpenChange={setNotificationTimeOpen}
-                    className="mb-4"
+                    className="px-3 py-2 border-t border-gray-100 dark:border-gray-700"
                   >
-                    <CollapsibleTrigger className="flex items-center justify-between w-full mb-2 text-sm font-medium">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
                       <div className="flex items-center">
                         <Clock size={16} className="mr-2" />
                         <span>Notification Time</span>
@@ -217,21 +234,21 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     </CollapsibleContent>
                   </Collapsible>
                   
-                  {/* Notification Frequency - Collapsible */}
+                  {/* Notification Frequency - Made more visible */}
                   <Collapsible
                     open={notificationFrequencyOpen}
                     onOpenChange={setNotificationFrequencyOpen}
-                    className="mb-4"
+                    className="px-3 py-2 border-t border-gray-100 dark:border-gray-700"
                   >
-                    <CollapsibleTrigger className="flex items-center justify-between w-full mb-2 text-sm font-medium">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
                       <div className="flex items-center">
-                        <Bell size={16} className="mr-2" />
-                        <span>Notification Frequency</span>
+                        <Bell size={16} className="mr-2 text-purple-500" />
+                        <span className="font-semibold">Notification Frequency</span>
                       </div>
                       <div>
                         {notificationFrequencyOpen ? 
-                          <ChevronUp size={16} /> : 
-                          <ChevronDown size={16} />
+                          <ChevronUp size={16} className="text-purple-500" /> : 
+                          <ChevronDown size={16} className="text-purple-500" />
                         }
                       </div>
                     </CollapsibleTrigger>
@@ -245,30 +262,59 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                           }}
                           className="w-full grid grid-cols-3 gap-1"
                         >
-                          <ToggleGroupItem value="daily" className="text-xs">Daily</ToggleGroupItem>
-                          <ToggleGroupItem value="weekly" className="text-xs">Weekly</ToggleGroupItem>
-                          <ToggleGroupItem value="none" className="text-xs">None</ToggleGroupItem>
+                          <ToggleGroupItem 
+                            value="daily" 
+                            className={cn(
+                              "text-xs",
+                              notificationFrequency === "daily" ? "bg-purple-500 text-white" : ""
+                            )}
+                          >
+                            Daily
+                          </ToggleGroupItem>
+                          <ToggleGroupItem 
+                            value="weekly" 
+                            className={cn(
+                              "text-xs",
+                              notificationFrequency === "weekly" ? "bg-purple-500 text-white" : ""
+                            )}
+                          >
+                            Weekly
+                          </ToggleGroupItem>
+                          <ToggleGroupItem 
+                            value="none" 
+                            className={cn(
+                              "text-xs",
+                              notificationFrequency === "none" ? "bg-purple-500 text-white" : ""
+                            )}
+                          >
+                            None
+                          </ToggleGroupItem>
                         </ToggleGroup>
+                        <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-medium">
+                          Real-time monitoring is always active
+                        </p>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
                   
                   {/* Recently Deleted Items */}
-                  <Link to="/deleted-items">
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "w-full justify-start gap-2 mb-1 mt-3",
-                        isRouteActive("/deleted-items") ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
-                      )}
-                    >
-                      <Trash2 size={18} />
-                      <span>Recently Deleted</span>
-                    </Button>
-                  </Link>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                  <DropdownMenuItem asChild className="px-0 py-0 focus:bg-transparent">
+                    <Link to="/deleted-items" className="w-full">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-full justify-start gap-2 rounded-none",
+                          isRouteActive("/deleted-items") ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
+                        )}
+                      >
+                        <Trash2 size={18} />
+                        <span>Recently Deleted</span>
+                      </Button>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </nav>
 
           <div className="p-4 border-t border-gray-100 dark:border-gray-700">

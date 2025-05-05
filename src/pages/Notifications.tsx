@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { mockNotifications } from '@/data/mockData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,21 @@ import { useToast } from "@/hooks/use-toast";
 
 const Notifications: React.FC = () => {
   const [notifications, setNotifications] = useState(mockNotifications);
+  const [expiryNotifications, setExpiryNotifications] = useState(true);
+  const [systemNotifications, setSystemNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true); // Always active
   const { toast } = useToast();
+
+  // Real-time monitoring of expiry dates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Check for items approaching expiry and create notifications if needed
+      // This is a placeholder for actual implementation with real data
+      console.log('Checking expiry dates...');
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const markAsRead = (id: string) => {
     setNotifications(notifications.map(notif => 
@@ -114,16 +128,33 @@ const Notifications: React.FC = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label htmlFor="expiry-notifications" className="dark:text-gray-300">Expiry Notifications</Label>
-            <Switch id="expiry-notifications" defaultChecked />
+            <Switch 
+              id="expiry-notifications" 
+              checked={expiryNotifications}
+              onCheckedChange={setExpiryNotifications}
+            />
           </div>
           <div className="flex items-center justify-between">
             <Label htmlFor="system-notifications" className="dark:text-gray-300">System Notifications</Label>
-            <Switch id="system-notifications" defaultChecked />
+            <Switch 
+              id="system-notifications" 
+              checked={systemNotifications}
+              onCheckedChange={setSystemNotifications}
+            />
           </div>
           <div className="flex items-center justify-between">
             <Label htmlFor="push-notifications" className="dark:text-gray-300">Push Notifications</Label>
-            <Switch id="push-notifications" />
+            <Switch 
+              id="push-notifications" 
+              checked={pushNotifications}
+              onCheckedChange={setPushNotifications}
+              disabled={true} // Make it always active
+              className="opacity-100"
+            />
           </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+            Push notifications are always active to ensure you receive important expiry reminders.
+          </p>
         </div>
       </div>
 
