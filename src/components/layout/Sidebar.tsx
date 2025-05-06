@@ -38,8 +38,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile sidebar toggle */}
-      <div className="lg:hidden fixed z-20 top-4 left-4">
+      {/* Mobile sidebar toggle - moved up */}
+      <div className="lg:hidden fixed z-20 top-2 left-2">
         <Button 
           variant="outline" 
           size="icon" 

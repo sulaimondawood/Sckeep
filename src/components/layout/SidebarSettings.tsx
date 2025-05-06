@@ -111,7 +111,7 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
             </CollapsibleContent>
           </Collapsible>
           
-          {/* Notification Frequency - Made more visible */}
+          {/* Notification Frequency - Removed purple colors */}
           <Collapsible
             open={notificationFrequencyOpen}
             onOpenChange={setNotificationFrequencyOpen}
@@ -119,13 +119,13 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
           >
             <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium">
               <div className="flex items-center">
-                <Bell size={16} className="mr-2 text-purple-500" />
-                <span className="font-semibold">Notification Frequency</span>
+                <Bell size={16} className="mr-2" />
+                <span>Notification Frequency</span>
               </div>
               <div>
                 {notificationFrequencyOpen ? 
-                  <ChevronUp size={16} className="text-purple-500" /> : 
-                  <ChevronDown size={16} className="text-purple-500" />
+                  <ChevronUp size={16} /> : 
+                  <ChevronDown size={16} />
                 }
               </div>
             </CollapsibleTrigger>
@@ -141,33 +141,24 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
                 >
                   <ToggleGroupItem 
                     value="daily" 
-                    className={cn(
-                      "text-xs",
-                      notificationFrequency === "daily" ? "bg-purple-500 text-white" : ""
-                    )}
+                    className="text-xs"
                   >
                     Daily
                   </ToggleGroupItem>
                   <ToggleGroupItem 
                     value="weekly" 
-                    className={cn(
-                      "text-xs",
-                      notificationFrequency === "weekly" ? "bg-purple-500 text-white" : ""
-                    )}
+                    className="text-xs"
                   >
                     Weekly
                   </ToggleGroupItem>
                   <ToggleGroupItem 
                     value="none" 
-                    className={cn(
-                      "text-xs",
-                      notificationFrequency === "none" ? "bg-purple-500 text-white" : ""
-                    )}
+                    className="text-xs"
                   >
                     None
                   </ToggleGroupItem>
                 </ToggleGroup>
-                <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-medium">
+                <p className="text-xs text-muted-foreground mt-1">
                   Real-time monitoring is always active
                 </p>
               </div>
