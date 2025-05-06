@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -64,9 +63,6 @@ const Signup = () => {
     <div className="flex flex-col min-h-screen items-center justify-center bg-slate-50 dark:bg-gray-900 p-4">
       <div className="w-full max-w-sm space-y-4">
         <div className="text-center">
-          <div className="flex justify-center mb-2">
-            <img src={logoSrc} alt="Sckeep Logo" className="h-10 object-contain" />
-          </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2 mx-auto">
             Welcome to <span className="inline-flex items-center">
               <img src={logoSrc} alt="Sckeep" className="h-6 md:h-8 ml-1" />
