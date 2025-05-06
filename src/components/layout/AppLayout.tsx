@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
@@ -24,6 +24,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
            (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
   
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const toggleBtnRef = useRef<HTMLButtonElement>(null);
+  
   // Apply theme when darkMode changes
   useEffect(() => {
     if (darkMode) {
@@ -34,6 +37,29 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
+
+  // Handle click outside sidebar to close it (only on mobile)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Only close on mobile when sidebar is open
+      if (window.innerWidth < 1024 && sidebarOpen) {
+        // Don't close if clicking on the sidebar itself or the toggle button
+        if (
+          sidebarRef.current && 
+          !sidebarRef.current.contains(event.target as Node) &&
+          toggleBtnRef.current &&
+          !toggleBtnRef.current.contains(event.target as Node)
+        ) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [sidebarOpen]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -63,6 +89,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         darkMode={darkMode}
         toggleTheme={toggleTheme}
         toggleSidebar={toggleSidebar}
+        sidebarRef={sidebarRef}
+        toggleBtnRef={toggleBtnRef}
       />
 
       {/* Main content */}

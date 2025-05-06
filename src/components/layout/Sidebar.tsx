@@ -19,6 +19,8 @@ interface SidebarProps {
   darkMode: boolean;
   toggleTheme: () => void;
   toggleSidebar: () => void;
+  sidebarRef?: React.RefObject<HTMLDivElement>;
+  toggleBtnRef?: React.RefObject<HTMLButtonElement>;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -27,7 +29,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   isRouteActive, 
   darkMode, 
   toggleTheme,
-  toggleSidebar
+  toggleSidebar,
+  sidebarRef,
+  toggleBtnRef
 }) => {
   const navItems = [
     { icon: Home, label: "Dashboard", to: "/" },
@@ -39,8 +43,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Mobile sidebar toggle - moved up */}
-      <div className="lg:hidden fixed z-20 top-2 left-2">
+      <div className="lg:hidden fixed top-2 left-2">
         <Button 
+          ref={toggleBtnRef}
           variant="outline" 
           size="icon" 
           onClick={toggleSidebar} 
@@ -52,8 +57,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
         className={cn(
-          "fixed inset-y-0 left-0 z-10 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
