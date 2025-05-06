@@ -37,51 +37,48 @@ const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <>
-      {/* Mobile sidebar toggle - moved up */}
-      <div className="lg:hidden fixed z-20 top-2 left-2">
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={toggleSidebar} 
-          className="rounded-full bg-white dark:bg-gray-800 shadow-md"
-        >
-          <Menu size={18} />
-        </Button>
-      </div>
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-10 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-            {/* Logo in the center of the sidebar header */}
-            <div className="flex items-center justify-center w-full">
-              <img 
-                src={logoSrc} 
-                alt="Sckeep Logo" 
-                className="h-10 object-contain"
-              />
-            </div>
-          </div>
-
-          <SidebarNavigation 
-            navItems={navItems} 
-            isRouteActive={isRouteActive} 
-          />
-          
-          <SidebarSettings 
-            isRouteActive={isRouteActive}
-            darkMode={darkMode}
-            toggleTheme={toggleTheme}
-          />
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}
+    >
+      <div className="flex flex-col h-full">
+        {/* Mobile sidebar toggle - positioned directly above logo */}
+        <div className="lg:hidden p-4 flex justify-end">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={toggleSidebar} 
+            className="rounded-full bg-white dark:bg-gray-800 shadow-md"
+          >
+            <Menu size={18} />
+          </Button>
         </div>
-      </aside>
-    </>
+
+        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-center">
+          {/* Logo in the center of the sidebar header */}
+          <div className="flex items-center justify-center w-full">
+            <img 
+              src={logoSrc} 
+              alt="Sckeep Logo" 
+              className="h-10 object-contain"
+            />
+          </div>
+        </div>
+
+        <SidebarNavigation 
+          navItems={navItems} 
+          isRouteActive={isRouteActive} 
+        />
+        
+        <SidebarSettings 
+          isRouteActive={isRouteActive}
+          darkMode={darkMode}
+          toggleTheme={toggleTheme}
+        />
+      </div>
+    </aside>
   );
 };
 

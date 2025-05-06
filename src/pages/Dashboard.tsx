@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -117,7 +118,7 @@ const Dashboard: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-gray-500">Manage your food inventory</p>
+          <p className="text-gray-500 dark:text-gray-400">Manage your food inventory</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" className="space-x-1">
