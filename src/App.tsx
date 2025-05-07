@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import Notifications from "./pages/Notifications";
 import Analytics from "./pages/Analytics";
+import FoodItemDetails from "./pages/FoodItemDetails";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -88,6 +89,17 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <Inventory showDeleted={true} />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          {/* New route for food item details */}
+          <Route
+            path="/item/:id"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <FoodItemDetails />
                 </AppLayout>
               </ProtectedRoute>
             }
