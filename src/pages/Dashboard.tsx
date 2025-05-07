@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle, Info } from 'lucide-react';
 import FoodItemCard from '@/components/food/FoodItemCard';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 import { 
   mockFoodItems, 
   mockNotifications 
@@ -24,11 +25,31 @@ import { ExpiryStatus, FoodItem } from '@/types/food';
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import ScannerModal from '@/components/scanner/ScannerModal';
+import { v4 as uuidv4 } from 'uuid';
 
 const Dashboard: React.FC = () => {
   const [foodItems, setFoodItems] = useState<FoodItem[]>(() => {
     const saved = localStorage.getItem('foodItems');
-    return saved ? JSON.parse(saved) : mockFoodItems;
+    if (saved) {
+      return JSON.parse(saved);
+    } else {
+      // Update mock data to have mostly unexpired dates
+      return mockFoodItems.map((item, index) => {
+        // Make most items not expired (leave 1-2 expired)
+        if (index < mockFoodItems.length - 2) {
+          const futureDate = new Date();
+          // Random days in the future (1-30 days)
+          const daysToAdd = Math.floor(Math.random() * 30) + 1;
+          futureDate.setDate(futureDate.getDate() + daysToAdd);
+          return {
+            ...item,
+            expiryDate: futureDate.toISOString().split('T')[0]
+          };
+        }
+        return item;
+      });
+    }
   });
   
   const [deletedItems, setDeletedItems] = useState<FoodItem[]>(() => {
@@ -37,7 +58,8 @@ const Dashboard: React.FC = () => {
   });
   
   const [notifications] = useState(mockNotifications);
-  const { toast } = useToast();
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const { toast: uiToast } = useToast();
 
   useEffect(() => {
     localStorage.setItem('foodItems', JSON.stringify(foodItems));
@@ -47,8 +69,48 @@ const Dashboard: React.FC = () => {
     localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
   }, [deletedItems]);
 
+  // Show push notifications on first dashboard load
+  useEffect(() => {
+    // Check if we've already shown the notification
+    const notificationShown = sessionStorage.getItem('dashboardNotificationShown');
+    
+    if (!notificationShown && 'Notification' in window) {
+      sessionStorage.setItem('dashboardNotificationShown', 'true');
+      
+      // Show notification for expiring items
+      const criticalItems = filterItemsByStatus('danger');
+      const expiredItems = filterItemsByStatus('expired');
+      
+      if (Notification.permission === 'granted') {
+        if (expiredItems.length > 0) {
+          new Notification('Food Expiry Alert', {
+            body: `You have ${expiredItems.length} expired items that need attention`,
+            icon: '/favicon.ico'
+          });
+          
+          uiToast.warning(`${expiredItems.length} expired items`, {
+            description: "These items have passed their expiry date"
+          });
+        }
+        
+        if (criticalItems.length > 0) {
+          setTimeout(() => {
+            new Notification('Items Expiring Soon', {
+              body: `${criticalItems.length} items will expire in the next 3 days`,
+              icon: '/favicon.ico'
+            });
+            
+            uiToast.warning(`${criticalItems.length} items expiring soon`, {
+              description: "Use these items within the next 3 days"
+            });
+          }, 3000);
+        }
+      }
+    }
+  }, []);
+
   const handleEditItem = (id: string) => {
-    toast({
+    uiToast({
       title: "Edit Item",
       description: `Editing item with ID: ${id}`,
     });
@@ -60,11 +122,36 @@ const Dashboard: React.FC = () => {
       setDeletedItems(prev => [...prev, itemToDelete]);
       setFoodItems(foodItems.filter(item => item.id !== id));
       
-      toast({
+      uiToast({
         title: "Item Removed",
         description: "Food item has been moved to recently deleted items.",
       });
     }
+  };
+
+  const handleAddNewItem = () => {
+    setScannerOpen(true);
+  };
+
+  const handleScanComplete = (itemData: any) => {
+    const newItem: FoodItem = {
+      id: uuidv4(),
+      name: itemData.name,
+      category: itemData.category,
+      expiryDate: itemData.expiryDate,
+      addedDate: new Date().toISOString().split('T')[0],
+      barcode: itemData.barcode,
+      quantity: itemData.quantity,
+      unit: itemData.unit,
+      notes: itemData.notes
+    };
+    
+    setFoodItems(prev => [newItem, ...prev]);
+    setScannerOpen(false);
+    
+    toast.success(`${itemData.name} added to inventory`, {
+      description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
+    });
   };
 
   const unreadNotifications = notifications.filter(n => !n.read);
@@ -120,11 +207,11 @@ const Dashboard: React.FC = () => {
           <p className="text-gray-500">Manage your food inventory</p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" className="space-x-1">
+          <Button variant="outline" className="space-x-1" onClick={() => window.location.href = '/notifications'}>
             <AlertCircle size={16} />
             <span>{unreadNotifications.length}</span>
           </Button>
-          <Button className="space-x-1">
+          <Button className="space-x-1" onClick={handleAddNewItem}>
             <Plus size={16} />
             <span>Add Item</span>
           </Button>
@@ -296,6 +383,12 @@ const Dashboard: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <ScannerModal
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   );
 };

@@ -12,8 +12,11 @@ import {
 import { Search, Filter, Barcode, RefreshCw, Package } from 'lucide-react';
 import FoodItemCard from '@/components/food/FoodItemCard';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 import { mockFoodItems } from '@/data/mockData';
 import { FoodItem } from '@/types/food';
+import ScannerModal from '@/components/scanner/ScannerModal';
+import { v4 as uuidv4 } from 'uuid';
 
 interface InventoryProps {
   showDeleted?: boolean;
@@ -23,7 +26,25 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
   const [foodItems, setFoodItems] = useState<FoodItem[]>(() => {
     // Load food items from localStorage, fall back to mockData if none
     const saved = localStorage.getItem('foodItems');
-    return saved ? JSON.parse(saved) : mockFoodItems;
+    if (saved) {
+      return JSON.parse(saved);
+    } else {
+      // Update mock data to have mostly unexpired dates
+      return mockFoodItems.map((item, index) => {
+        // Make most items not expired (leave 1-2 expired)
+        if (index < mockFoodItems.length - 2) {
+          const futureDate = new Date();
+          // Random days in the future (1-30 days)
+          const daysToAdd = Math.floor(Math.random() * 30) + 1;
+          futureDate.setDate(futureDate.getDate() + daysToAdd);
+          return {
+            ...item,
+            expiryDate: futureDate.toISOString().split('T')[0]
+          };
+        }
+        return item;
+      });
+    }
   });
   
   const [deletedItems, setDeletedItems] = useState<FoodItem[]>(() => {
@@ -33,7 +54,8 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const { toast } = useToast();
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const { toast: uiToast } = useToast();
 
   // Save to localStorage whenever items change
   useEffect(() => {
@@ -45,7 +67,7 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
   }, [deletedItems]);
 
   const handleEditItem = (id: string) => {
-    toast({
+    uiToast({
       title: "Edit Item",
       description: `Editing item with ID: ${id}`,
     });
@@ -57,7 +79,7 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
       setDeletedItems(prev => [...prev, itemToDelete]);
       setFoodItems(foodItems.filter(item => item.id !== id));
       
-      toast({
+      uiToast({
         title: "Item Removed",
         description: "Food item has been moved to recently deleted items.",
       });
@@ -65,9 +87,27 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
   };
 
   const handleAddNewItem = () => {
-    toast({
-      title: "Add New Item",
-      description: "Opening barcode scanner...",
+    setScannerOpen(true);
+  };
+
+  const handleScanComplete = (itemData: any) => {
+    const newItem: FoodItem = {
+      id: uuidv4(),
+      name: itemData.name,
+      category: itemData.category,
+      expiryDate: itemData.expiryDate,
+      addedDate: new Date().toISOString().split('T')[0],
+      barcode: itemData.barcode,
+      quantity: itemData.quantity,
+      unit: itemData.unit,
+      notes: itemData.notes
+    };
+    
+    setFoodItems(prev => [newItem, ...prev]);
+    setScannerOpen(false);
+    
+    toast.success(`${itemData.name} added to inventory`, {
+      description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
     });
   };
 
@@ -77,7 +117,7 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
       setFoodItems(prev => [...prev, itemToRestore]);
       setDeletedItems(deletedItems.filter(item => item.id !== id));
       
-      toast({
+      uiToast({
         title: "Item Restored",
         description: "Food item has been restored to your inventory.",
       });
@@ -87,7 +127,7 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
   const handlePermanentDelete = (id: string) => {
     setDeletedItems(deletedItems.filter(item => item.id !== id));
     
-    toast({
+    uiToast({
       title: "Item Permanently Deleted",
       description: "Food item has been permanently removed.",
     });
@@ -233,6 +273,12 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
           <Barcode size={24} />
         </Button>
       )}
+
+      <ScannerModal
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   );
 };
