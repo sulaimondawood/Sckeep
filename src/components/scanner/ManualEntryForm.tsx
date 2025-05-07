@@ -1,147 +1,244 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { v4 as uuidv4 } from 'uuid';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Define form schema
+const formSchema = z.object({
+  name: z.string().min(1, { message: "Name is required" }),
+  category: z.string().min(1, { message: "Category is required" }),
+  barcode: z.string().optional(),
+  quantity: z.coerce.number().positive({ message: "Quantity must be positive" }),
+  unit: z.string().min(1, { message: "Unit is required" }),
+  expiryDate: z.date({ required_error: "Expiry date is required" }),
+  notes: z.string().optional()
+});
 
 interface ManualEntryFormProps {
-  barcode?: string;
+  initialData?: {
+    barcode?: string;
+  };
   onSubmit: (data: any) => void;
 }
 
-const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ barcode, onSubmit }) => {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ initialData = {}, onSubmit }) => {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      barcode: barcode || "",
-      name: "",
-      category: "dairy",
-      quantity: "1",
-      unit: "pcs",
-      expiryDate: new Date().toISOString().split('T')[0]
-    }
+      name: '',
+      category: '',
+      barcode: initialData.barcode || '',
+      quantity: 1,
+      unit: 'item',
+      expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default to 7 days from now
+      notes: ''
+    },
   });
-  
-  const processForm = (data: any) => {
-    // Process the form data
+
+  const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
+    // Format the date as ISO string (YYYY-MM-DD)
     const formattedData = {
-      ...data,
-      quantity: Number(data.quantity),
-      id: uuidv4(),
-      addedDate: new Date().toISOString().split('T')[0]
+      ...values,
+      expiryDate: values.expiryDate.toISOString().split('T')[0]
     };
-    
     onSubmit(formattedData);
   };
-  
+
+  const categories = [
+    "Dairy",
+    "Meat",
+    "Produce",
+    "Bakery",
+    "Canned Goods",
+    "Frozen Foods",
+    "Snacks",
+    "Beverages",
+    "Condiments",
+    "Other"
+  ];
+
+  const units = [
+    "item",
+    "pack",
+    "kg",
+    "g",
+    "l",
+    "ml",
+    "oz",
+    "lb",
+    "bottle",
+    "box",
+    "can",
+    "jar"
+  ];
+
   return (
-    <form onSubmit={handleSubmit(processForm)} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="barcode">Barcode (optional)</Label>
-          <Input
-            id="barcode"
-            placeholder="Enter barcode"
-            {...register("barcode")}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="name">Product Name *</Label>
-          <Input
-            id="name"
-            placeholder="Product name"
-            {...register("name", { required: "Name is required" })}
-          />
-          {errors.name && (
-            <p className="text-xs text-destructive">{errors.name.message}</p>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="barcode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Barcode (optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter barcode" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="category">Category *</Label>
-          <Select defaultValue="dairy" {...register("category")}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="dairy">Dairy</SelectItem>
-              <SelectItem value="meat">Meat</SelectItem>
-              <SelectItem value="vegetables">Vegetables</SelectItem>
-              <SelectItem value="fruits">Fruits</SelectItem>
-              <SelectItem value="bakery">Bakery</SelectItem>
-              <SelectItem value="frozen">Frozen</SelectItem>
-              <SelectItem value="canned">Canned</SelectItem>
-              <SelectItem value="drinks">Drinks</SelectItem>
-              <SelectItem value="snacks">Snacks</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantity *</Label>
-            <Input
-              id="quantity"
-              type="number"
-              min="1"
-              {...register("quantity", { 
-                required: "Quantity is required",
-                min: { value: 1, message: "Minimum quantity is 1" }
-              })}
-            />
-            {errors.quantity && (
-              <p className="text-xs text-destructive">{errors.quantity.message}</p>
+        />
+
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Product Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter product name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex gap-4">
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>Quantity</FormLabel>
+                <FormControl>
+                  <Input type="number" min="1" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="unit">Unit *</Label>
-            <Select defaultValue="pcs" {...register("unit")}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pcs">Piece(s)</SelectItem>
-                <SelectItem value="kg">Kilogram(s)</SelectItem>
-                <SelectItem value="g">Gram(s)</SelectItem>
-                <SelectItem value="l">Liter(s)</SelectItem>
-                <SelectItem value="ml">Milliliter(s)</SelectItem>
-                <SelectItem value="pkg">Package(s)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="expiryDate">Expiry Date *</Label>
-          <Input
-            id="expiryDate"
-            type="date"
-            {...register("expiryDate", { required: "Expiry date is required" })}
           />
-          {errors.expiryDate && (
-            <p className="text-xs text-destructive">{errors.expiryDate.message}</p>
+
+          <FormField
+            control={form.control}
+            name="unit"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>Unit</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a unit" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {units.map((unit) => (
+                      <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="expiryDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Expiry Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="notes">Notes (optional)</Label>
-          <Input
-            id="notes"
-            placeholder="Additional notes"
-            {...register("notes")}
-          />
-        </div>
-      </div>
-      
-      <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? "Adding..." : "Add Item"}
-      </Button>
-    </form>
+        />
+
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes (optional)</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Add any additional details..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" className="w-full mt-4">Add Item</Button>
+      </form>
+    </Form>
   );
 };
 

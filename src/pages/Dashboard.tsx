@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -88,7 +89,7 @@ const Dashboard: React.FC = () => {
             icon: '/favicon.ico'
           });
           
-          uiToast.warning(`${expiredItems.length} expired items`, {
+          toast.error(`${expiredItems.length} expired items`, {
             description: "These items have passed their expiry date"
           });
         }
@@ -100,7 +101,7 @@ const Dashboard: React.FC = () => {
               icon: '/favicon.ico'
             });
             
-            uiToast.warning(`${criticalItems.length} items expiring soon`, {
+            toast.warning(`${criticalItems.length} items expiring soon`, {
               description: "Use these items within the next 3 days"
             });
           }, 3000);
