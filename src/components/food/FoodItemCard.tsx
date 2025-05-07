@@ -3,7 +3,7 @@ import { FoodItem } from "@/types/food";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, getExpiryStatus, getStatusColor } from "@/utils/expiryUtils";
-import { Trash, Edit, MoreVertical } from 'lucide-react';
+import { Trash, Pencil, MoreVertical } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import {
@@ -61,7 +61,7 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) =
                     e.stopPropagation();
                     onEdit(item.id);
                   }} className="dropdown-action">
-                    <Edit size={16} className="mr-2" />
+                    <Pencil size={16} className="mr-2" />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => {

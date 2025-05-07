@@ -5,16 +5,18 @@ import { FoodItem } from '@/types/food';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Edit, Trash } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate, getExpiryStatus, getStatusColor } from '@/utils/expiryUtils';
 import { mockFoodItems } from '@/data/mockData';
+import EditFoodItemDialog from '@/components/food/EditFoodItemDialog';
 
 const FoodItemDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [item, setItem] = useState<FoodItem | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   useEffect(() => {
     // In a real app, this would be an API call
@@ -36,10 +38,7 @@ const FoodItemDetails: React.FC = () => {
   }, [id, navigate, toast]);
 
   const handleEdit = () => {
-    toast({
-      title: "Edit Item",
-      description: `Editing item: ${item?.name}`,
-    });
+    setIsEditDialogOpen(true);
   };
 
   const handleDelete = () => {
@@ -64,6 +63,29 @@ const FoodItemDetails: React.FC = () => {
       
       navigate('/inventory');
     }
+  };
+
+  const handleSaveEdit = (updatedItem: FoodItem) => {
+    // In a real app, this would be an API call
+    const savedItems = localStorage.getItem('foodItems');
+    const items: FoodItem[] = savedItems ? JSON.parse(savedItems) : mockFoodItems;
+    
+    const updatedItems = items.map(i => 
+      i.id === updatedItem.id ? updatedItem : i
+    );
+    
+    localStorage.setItem('foodItems', JSON.stringify(updatedItems));
+    
+    // Update current item state
+    setItem(updatedItem);
+    
+    // Close dialog
+    setIsEditDialogOpen(false);
+    
+    toast({
+      title: "Item Updated",
+      description: "Food item has been successfully updated.",
+    });
   };
 
   if (!item) {
@@ -98,7 +120,7 @@ const FoodItemDetails: React.FC = () => {
             onClick={handleEdit}
             className="flex items-center gap-2"
           >
-            <Edit size={16} />
+            <Pencil size={16} />
             Edit
           </Button>
           <Button
@@ -204,6 +226,14 @@ const FoodItemDetails: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <EditFoodItemDialog 
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        item={item}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 };

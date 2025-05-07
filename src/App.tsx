@@ -93,7 +93,7 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          {/* New route for food item details */}
+          {/* Food item details */}
           <Route
             path="/item/:id"
             element={
