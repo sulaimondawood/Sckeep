@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { FoodItem } from '@/types/food';
 import { useToast } from '@/hooks/use-toast';
+import { Image as ImageIcon } from 'lucide-react';
 
 interface EditFoodItemDialogProps {
   isOpen: boolean;
@@ -24,17 +25,20 @@ const UNITS = ['pieces', 'grams', 'kg', 'ml', 'liters', 'bottle', 'carton', 'box
 const EditFoodItemDialog: React.FC<EditFoodItemDialogProps> = ({ isOpen, onClose, item, onSave }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<FoodItem | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Initialize form data when dialog opens with item data
-  useState(() => {
-    if (item) {
+  // Initialize form data when dialog opens with item data or when the item changes
+  useEffect(() => {
+    if (item && isOpen) {
       setFormData({ ...item });
+      setImagePreview(item.imageUrl || null);
     }
-  });
+  }, [item, isOpen]);
 
   // Reset form when dialog closes
   const handleClose = () => {
     setFormData(null);
+    setImagePreview(null);
     onClose();
   };
 
@@ -55,6 +59,22 @@ const EditFoodItemDialog: React.FC<EditFoodItemDialogProps> = ({ isOpen, onClose
         return { ...prev, [name]: numValue };
       });
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      setImagePreview(imageUrl);
+      setFormData(prev => {
+        if (!prev) return null;
+        return { ...prev, imageUrl };
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -83,6 +103,55 @@ const EditFoodItemDialog: React.FC<EditFoodItemDialogProps> = ({ isOpen, onClose
           <DialogTitle>Edit Food Item</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          {/* Image upload */}
+          <div className="space-y-2">
+            <Label htmlFor="image">Product Image (optional)</Label>
+            <div className="space-y-2">
+              {imagePreview ? (
+                <div className="relative w-full h-40 mb-2 border rounded-md overflow-hidden">
+                  <img 
+                    src={imagePreview} 
+                    alt="Product preview" 
+                    className="w-full h-full object-contain"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute top-1 right-1 h-8 w-8 p-0"
+                    onClick={() => {
+                      setImagePreview(null);
+                      setFormData(prev => {
+                        if (!prev) return null;
+                        const updated = { ...prev };
+                        delete updated.imageUrl;
+                        return updated;
+                      });
+                    }}
+                  >
+                    ✕
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center w-full h-40 border-2 border-dashed rounded-md border-gray-300 dark:border-gray-700">
+                  <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <ImageIcon className="w-10 h-10 mb-3 text-gray-400" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Upload image</p>
+                    </div>
+                    <input 
+                      id="file-upload" 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>

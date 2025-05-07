@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { mockFoodItems } from '@/data/mockData';
 import { FoodItem } from '@/types/food';
 import ScannerModal from '@/components/scanner/ScannerModal';
+import EditFoodItemDialog from '@/components/food/EditFoodItemDialog';
 import { v4 as uuidv4 } from 'uuid';
 
 interface InventoryProps {
@@ -55,6 +56,8 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast: uiToast } = useToast();
 
   // Save to localStorage whenever items change
@@ -67,9 +70,30 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
   }, [deletedItems]);
 
   const handleEditItem = (id: string) => {
+    const item = foodItems.find(item => item.id === id);
+    if (item) {
+      setEditingItem(item);
+      setIsEditDialogOpen(true);
+    } else {
+      uiToast({
+        title: "Edit Error",
+        description: "Could not find the item to edit.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveEdit = (updatedItem: FoodItem) => {
+    setFoodItems(prev => 
+      prev.map(item => item.id === updatedItem.id ? updatedItem : item)
+    );
+    
+    setIsEditDialogOpen(false);
+    setEditingItem(null);
+    
     uiToast({
-      title: "Edit Item",
-      description: `Editing item with ID: ${id}`,
+      title: "Item Updated",
+      description: "Food item has been successfully updated.",
     });
   };
 
@@ -100,7 +124,8 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
       barcode: itemData.barcode,
       quantity: itemData.quantity,
       unit: itemData.unit,
-      notes: itemData.notes
+      notes: itemData.notes,
+      imageUrl: itemData.imageUrl
     };
     
     setFoodItems(prev => [newItem, ...prev]);
@@ -279,6 +304,19 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
         onClose={() => setScannerOpen(false)}
         onScanComplete={handleScanComplete}
       />
+
+      {/* Edit Dialog */}
+      {editingItem && (
+        <EditFoodItemDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingItem(null);
+          }}
+          item={editingItem}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 };

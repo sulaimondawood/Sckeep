@@ -160,7 +160,7 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
           
           <TabsContent value="manual" className="py-4">
             <ManualEntryForm 
-              barcode={scannedData || undefined} 
+              initialData={{barcode: scannedData || undefined}} 
               onSubmit={handleManualSubmit} 
             />
           </TabsContent>

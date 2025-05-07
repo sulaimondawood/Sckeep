@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Define form schema
@@ -29,27 +29,38 @@ const formSchema = z.object({
   quantity: z.coerce.number().positive({ message: "Quantity must be positive" }),
   unit: z.string().min(1, { message: "Unit is required" }),
   expiryDate: z.date({ required_error: "Expiry date is required" }),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  imageUrl: z.string().optional()
 });
 
 interface ManualEntryFormProps {
   initialData?: {
     barcode?: string;
+    name?: string;
+    category?: string;
+    quantity?: number;
+    unit?: string;
+    expiryDate?: Date;
+    notes?: string;
+    imageUrl?: string;
   };
   onSubmit: (data: any) => void;
 }
 
 const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ initialData = {}, onSubmit }) => {
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData.imageUrl || null);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      category: '',
+      name: initialData.name || '',
+      category: initialData.category || '',
       barcode: initialData.barcode || '',
-      quantity: 1,
-      unit: 'item',
-      expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default to 7 days from now
-      notes: ''
+      quantity: initialData.quantity || 1,
+      unit: initialData.unit || 'item',
+      expiryDate: initialData.expiryDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default to 7 days from now
+      notes: initialData.notes || '',
+      imageUrl: initialData.imageUrl || ''
     },
   });
 
@@ -60,6 +71,19 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ initialData = {}, onS
       expiryDate: values.expiryDate.toISOString().split('T')[0]
     };
     onSubmit(formattedData);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      setImagePreview(imageUrl);
+      form.setValue('imageUrl', imageUrl);
+    };
+    reader.readAsDataURL(file);
   };
 
   const categories = [
@@ -101,6 +125,60 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ initialData = {}, onS
               <FormLabel>Barcode (optional)</FormLabel>
               <FormControl>
                 <Input placeholder="Enter barcode" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Image upload field */}
+        <FormField
+          control={form.control}
+          name="imageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Product Image (optional)</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  {imagePreview ? (
+                    <div className="relative w-full h-40 mb-2 border rounded-md overflow-hidden">
+                      <img 
+                        src={imagePreview} 
+                        alt="Product preview" 
+                        className="w-full h-full object-contain"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        className="absolute top-1 right-1 h-8 w-8 p-0"
+                        onClick={() => {
+                          setImagePreview(null);
+                          form.setValue('imageUrl', '');
+                        }}
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-40 border-2 border-dashed rounded-md border-gray-300 dark:border-gray-700">
+                      <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <ImageIcon className="w-10 h-10 mb-3 text-gray-400" />
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Upload image</p>
+                        </div>
+                        <input 
+                          id="file-upload" 
+                          type="file" 
+                          className="hidden" 
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  <input type="hidden" {...field} />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

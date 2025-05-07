@@ -53,22 +53,28 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) =
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 ml-2 dropdown-action">
-                    <MoreVertical size={16} />
+                    <MoreVertical size={16} className="dropdown-action" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="dropdown-action">
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(item.id);
-                  }} className="dropdown-action">
-                    <Pencil size={16} className="mr-2" />
+                  <DropdownMenuItem
+                    className="dropdown-action"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(item.id);
+                    }} 
+                  >
+                    <Pencil size={16} className="mr-2 dropdown-action" />
                     Edit
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(item.id);
-                  }} className="text-destructive dropdown-action">
-                    <Trash size={16} className="mr-2" />
+                  <DropdownMenuItem
+                    className="text-destructive dropdown-action"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(item.id);
+                    }} 
+                  >
+                    <Trash size={16} className="mr-2 dropdown-action" />
                     Remove
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -76,6 +82,17 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) =
             </div>
           </div>
         </div>
+        
+        {/* Image if available */}
+        {item.imageUrl && (
+          <div className="mt-3 h-32 rounded-md overflow-hidden bg-gray-50 dark:bg-gray-800">
+            <img 
+              src={item.imageUrl} 
+              alt={item.name}
+              className="w-full h-full object-contain" 
+            />
+          </div>
+        )}
         
         <div className="mt-4 text-sm">
           <div className="flex justify-between">

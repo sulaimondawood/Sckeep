@@ -9,6 +9,7 @@ export interface FoodItem {
   quantity: number;
   unit: string;
   notes?: string;
+  imageUrl?: string;
 }
 
 export type ExpiryStatus = 'safe' | 'warning' | 'danger' | 'expired';
