@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Define form schema
 const formSchema = z.object({
@@ -115,208 +116,212 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ initialData = {}, onS
   ];
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="barcode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Barcode (optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter barcode" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <ScrollArea className="h-[60vh] pr-4">
+      <div className="pr-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="barcode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Barcode (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter barcode" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        {/* Image upload field */}
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Product Image (optional)</FormLabel>
-              <FormControl>
-                <div className="space-y-2">
-                  {imagePreview ? (
-                    <div className="relative w-full h-40 mb-2 border rounded-md overflow-hidden">
-                      <img 
-                        src={imagePreview} 
-                        alt="Product preview" 
-                        className="w-full h-full object-contain"
-                      />
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute top-1 right-1 h-8 w-8 p-0"
-                        onClick={() => {
-                          setImagePreview(null);
-                          form.setValue('imageUrl', '');
-                        }}
-                      >
-                        ✕
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center w-full h-40 border-2 border-dashed rounded-md border-gray-300 dark:border-gray-700">
-                      <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <ImageIcon className="w-10 h-10 mb-3 text-gray-400" />
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Upload image</p>
+            {/* Image upload field */}
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Product Image (optional)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      {imagePreview ? (
+                        <div className="relative w-full h-40 mb-2 border rounded-md overflow-hidden">
+                          <img 
+                            src={imagePreview} 
+                            alt="Product preview" 
+                            className="w-full h-full object-contain"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            className="absolute top-1 right-1 h-8 w-8 p-0"
+                            onClick={() => {
+                              setImagePreview(null);
+                              form.setValue('imageUrl', '');
+                            }}
+                          >
+                            ✕
+                          </Button>
                         </div>
-                        <input 
-                          id="file-upload" 
-                          type="file" 
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                        />
-                      </label>
-                    </div>
-                  )}
-                  <input type="hidden" {...field} />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Product Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter product name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex gap-4">
-          <FormField
-            control={form.control}
-            name="quantity"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Quantity</FormLabel>
-                <FormControl>
-                  <Input type="number" min="1" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="unit"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Unit</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a unit" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="expiryDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Expiry Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
                       ) : (
-                        <span>Pick a date</span>
+                        <div className="flex items-center justify-center w-full h-40 border-2 border-dashed rounded-md border-gray-300 dark:border-gray-700">
+                          <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <ImageIcon className="w-10 h-10 mb-3 text-gray-400" />
+                              <p className="text-sm text-gray-500 dark:text-gray-400">Upload image</p>
+                            </div>
+                            <input 
+                              id="file-upload" 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                            />
+                          </label>
+                        </div>
                       )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
+                      <input type="hidden" {...field} />
+                    </div>
                   </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes (optional)</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Add any additional details..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Product Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter product name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <Button type="submit" className="w-full mt-4">Add Item</Button>
-      </form>
-    </Form>
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex gap-4">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Unit</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a unit" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {units.map((unit) => (
+                          <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="expiryDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Expiry Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Add any additional details..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" className="w-full mt-4">Add Item</Button>
+          </form>
+        </Form>
+      </div>
+    </ScrollArea>
   );
 };
 

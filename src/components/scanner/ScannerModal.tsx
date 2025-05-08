@@ -65,13 +65,13 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-screen overflow-hidden">
         <DialogHeader>
           <DialogTitle>Add New Item</DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="barcode" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 mb-2">
             <TabsTrigger value="barcode">Barcode</TabsTrigger>
             <TabsTrigger value="camera">Camera</TabsTrigger>
             <TabsTrigger value="manual">Manual</TabsTrigger>
@@ -158,7 +158,7 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
             </div>
           </TabsContent>
           
-          <TabsContent value="manual" className="py-4">
+          <TabsContent value="manual" className="py-2">
             <ManualEntryForm 
               initialData={{barcode: scannedData || undefined}} 
               onSubmit={handleManualSubmit} 
