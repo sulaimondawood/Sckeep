@@ -1,14 +1,16 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
-import { Camera, ScanBarcode } from "lucide-react";
+import { Camera, ScanBarcode, Wifi, WifiOff, AlertTriangle } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import BarcodeScanner from "./BarcodeScanner";
 import CameraScanner from "./CameraScanner";
 import ManualEntryForm from "./ManualEntryForm";
+import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
 
 interface ScannerModalProps {
   open: boolean;
@@ -21,6 +23,22 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const { toast: uiToast } = useToast();
+  const { isConnected: scannerConnected, lastDetectionMethod, bluetoothAvailable } = useBarcodeScanner();
+
+  useEffect(() => {
+    // If scanner is not detected, recommend switching to camera or manual entry
+    if (open && activeTab === "barcode" && !scannerConnected && !isScanning) {
+      const timer = setTimeout(() => {
+        uiToast({
+          title: "Barcode Scanner",
+          description: "No scanner detected. Consider using the camera or manual entry.",
+          variant: "default"
+        });
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [open, activeTab, scannerConnected, isScanning, uiToast]);
 
   const handleScan = (data: string) => {
     setScannedData(data);
@@ -63,9 +81,27 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
     onScanComplete(formData);
   };
 
+  const renderScannerStatus = () => {
+    if (scannerConnected) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-green-600">
+          <Wifi size={16} />
+          <span>Scanner connected</span>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <WifiOff size={16} />
+        <span>No scanner detected</span>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md max-h-screen overflow-hidden">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Add New Item</DialogTitle>
         </DialogHeader>
@@ -82,6 +118,9 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
               <div className="flex justify-center mb-4">
                 <ScanBarcode size={48} className="text-primary" />
               </div>
+              
+              {renderScannerStatus()}
+              
               {!isScanning ? (
                 <Button onClick={handleStartScanning}>
                   Start Barcode Scanner
@@ -159,12 +198,21 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
           </TabsContent>
           
           <TabsContent value="manual" className="py-2">
-            <ManualEntryForm 
-              initialData={{barcode: scannedData || undefined}} 
-              onSubmit={handleManualSubmit} 
-            />
+            <ScrollArea className="h-[60vh]">
+              <ManualEntryForm 
+                initialData={{barcode: scannedData || undefined}} 
+                onSubmit={handleManualSubmit} 
+              />
+            </ScrollArea>
           </TabsContent>
         </Tabs>
+
+        {!bluetoothAvailable && activeTab === "barcode" && (
+          <div className="text-sm flex items-center gap-2 mt-4 text-yellow-600 bg-yellow-50 p-2 rounded-md">
+            <AlertTriangle size={16} />
+            <span>Bluetooth API not available in this browser. Scanner detection may be limited.</span>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

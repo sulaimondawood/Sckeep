@@ -1,6 +1,7 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
 
 interface BarcodeScannerProps {
   onScan: (data: string) => void;
@@ -9,6 +10,7 @@ interface BarcodeScannerProps {
 
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
   const [error, setError] = useState<string | null>(null);
+  const { isConnected: scannerConnected } = useBarcodeScanner();
   
   useEffect(() => {
     // In a real application, this would use a library like quagga.js or zxing
@@ -48,7 +50,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
       </div>
       <div className="absolute bottom-4 left-0 right-0 flex justify-center">
         <div className="px-3 py-1 bg-black/50 rounded-full text-white text-xs">
-          Scanning...
+          {scannerConnected ? "Scanner detected - Ready to scan" : "Scanning (No dedicated scanner detected)"}
         </div>
       </div>
     </div>
