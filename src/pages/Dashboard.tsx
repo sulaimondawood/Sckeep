@@ -27,6 +27,7 @@ import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import ScannerModal from '@/components/scanner/ScannerModal';
+import EditFoodItemDialog from '@/components/food/EditFoodItemDialog';
 import { v4 as uuidv4 } from 'uuid';
 
 const Dashboard: React.FC = () => {
@@ -61,6 +62,8 @@ const Dashboard: React.FC = () => {
   const [notifications] = useState(mockNotifications);
   const [scannerOpen, setScannerOpen] = useState(false);
   const { toast: uiToast } = useToast();
+  const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('foodItems', JSON.stringify(foodItems));
@@ -111,10 +114,11 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleEditItem = (id: string) => {
-    uiToast({
-      title: "Edit Item",
-      description: `Editing item with ID: ${id}`,
-    });
+    const itemToEdit = foodItems.find(item => item.id === id);
+    if (itemToEdit) {
+      setEditingItem(itemToEdit);
+      setIsEditDialogOpen(true);
+    }
   };
 
   const handleDeleteItem = (id: string) => {
@@ -152,6 +156,20 @@ const Dashboard: React.FC = () => {
     
     toast.success(`${itemData.name} added to inventory`, {
       description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
+    });
+  };
+
+  const handleSaveEdit = (updatedItem: FoodItem) => {
+    setFoodItems(prevItems => 
+      prevItems.map(item => item.id === updatedItem.id ? updatedItem : item)
+    );
+    
+    setIsEditDialogOpen(false);
+    setEditingItem(null);
+    
+    uiToast({
+      title: "Item Updated",
+      description: "Food item has been successfully updated.",
     });
   };
 
@@ -385,10 +403,22 @@ const Dashboard: React.FC = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Scanner Modal */}
       <ScannerModal
         open={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScanComplete={handleScanComplete}
+      />
+
+      {/* Edit Food Item Dialog */}
+      <EditFoodItemDialog 
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingItem(null);
+        }}
+        item={editingItem}
+        onSave={handleSaveEdit}
       />
     </div>
   );

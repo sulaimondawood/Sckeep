@@ -155,7 +155,7 @@ const FoodItemDetails: React.FC = () => {
             {/* Left column - Image */}
             <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
               <img 
-                src={placeholderImage} 
+                src={item.imageUrl || placeholderImage} 
                 alt={item.name}
                 className="w-full h-64 object-cover"
               />
