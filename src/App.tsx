@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";
 import AppLayout from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
@@ -19,15 +21,15 @@ import Signup from "./pages/Signup";
 
 const queryClient = new QueryClient();
 
-// Mock auth check - in a real app, this would check if the user is authenticated
-const isAuthenticated = () => {
-  // This is just a placeholder for now
-  return localStorage.getItem('authenticated') === 'true';
-};
-
-// Protected route component
+// Protected route component using our auth context
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated()) {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   
@@ -49,89 +51,103 @@ const requestNotificationPermission = () => {
   }
 };
 
-const App = () => {
+const AppRoutes = () => {
+  const { isAuthenticated } = useAuth();
+  
   useEffect(() => {
     // Request notification permission when app loads
-    if (isAuthenticated()) {
+    if (isAuthenticated) {
       requestNotificationPermission();
     }
-  }, []);
+  }, [isAuthenticated]);
 
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={
+        isAuthenticated ? <Navigate to="/" replace /> : <Login />
+      } />
+      <Route path="/signup" element={
+        isAuthenticated ? <Navigate to="/" replace /> : <Signup />
+      } />
+      
+      {/* Protected routes */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Dashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inventory"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Inventory />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Notifications />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Analytics />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/deleted-items"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Inventory showDeleted={true} />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      {/* Food item details */}
+      <Route
+        path="/item/:id"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <FoodItemDetails />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            
-            {/* Protected routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Dashboard />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/inventory"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Inventory />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Notifications />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Analytics />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/deleted-items"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Inventory showDeleted={true} />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            {/* Food item details */}
-            <Route
-              path="/item/:id"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <FoodItemDetails />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

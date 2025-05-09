@@ -1,13 +1,15 @@
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Lock, User } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/use-theme';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import lightLogo from '../assets/light-logo.png';
 import darkLogo from '../assets/dark-logo.png';
 
@@ -16,47 +18,45 @@ const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const { register, isLoading } = useAuth();
   const { isDarkMode } = useTheme();
   
   const logoSrc = isDarkMode ? darkLogo : lightLogo;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!name || !email || !password) {
-      toast.error('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
     
     if (!acceptTerms) {
-      toast.error('Please accept the terms and conditions');
+      setError('Please accept the terms and conditions');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
       return;
     }
     
     try {
-      setIsLoading(true);
-      // This is a placeholder for actual signup logic
-      
-      setTimeout(() => {
-        // Set authentication flag in localStorage
-        localStorage.setItem('authenticated', 'true');
-        toast.success('Account created successfully!');
-        navigate('/');
-      }, 1000);
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+      const success = await register({ email, password }, name);
+      if (!success) {
+        setError('Registration failed. Please try again.');
+      }
+    } catch (error: any) {
+      setError(error.message || 'Registration failed. Please try again.');
     }
   };
 
   const handleGoogleSignup = () => {
-    // This is a placeholder for Google authentication
-    localStorage.setItem('authenticated', 'true');
-    toast.success('Google signup successful!');
-    navigate('/');
+    // This is a placeholder for OAuth signup
+    // We'll implement this later if needed
+    setError('Google signup is not yet implemented');
   };
 
   return (
@@ -77,6 +77,12 @@ const Signup = () => {
             <CardDescription>Enter your details to create an account</CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSignup} className="space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="name">Full Name</Label>
@@ -89,6 +95,7 @@ const Signup = () => {
                     className="pl-10"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -104,6 +111,7 @@ const Signup = () => {
                     className="pl-10"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -118,6 +126,7 @@ const Signup = () => {
                     className="pl-10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
@@ -128,6 +137,7 @@ const Signup = () => {
                   id="terms" 
                   checked={acceptTerms}
                   onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                  disabled={isLoading}
                 />
                 <label
                   htmlFor="terms"
@@ -156,6 +166,7 @@ const Signup = () => {
               variant="outline" 
               className="w-full"
               onClick={handleGoogleSignup}
+              disabled={isLoading}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path

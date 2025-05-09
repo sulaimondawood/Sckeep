@@ -1,54 +1,49 @@
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Lock } from 'lucide-react';
-import { toast } from 'sonner';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/context/AuthContext';
 import lightLogo from '../assets/light-logo.png';
 import darkLogo from '../assets/dark-logo.png';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const { login, isLoading } = useAuth();
   const { isDarkMode } = useTheme();
   
   const logoSrc = isDarkMode ? darkLogo : lightLogo;
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!email || !password) {
-      toast.error('Please enter both email and password');
+      setError('Please enter both email and password');
       return;
     }
     
     try {
-      setIsLoading(true);
-      // This is a placeholder for actual authentication logic
-      
-      setTimeout(() => {
-        // Set authentication flag in localStorage
-        localStorage.setItem('authenticated', 'true');
-        toast.success('Login successful!');
-        navigate('/');
-      }, 1000);
-    } catch (error) {
-      toast.error('Login failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
+      const success = await login({ email, password });
+      if (!success) {
+        setError('Invalid email or password');
+      }
+    } catch (error: any) {
+      setError(error.message || 'Login failed. Please try again.');
     }
   };
 
   const handleGoogleLogin = () => {
-    // This is a placeholder for Google authentication
-    localStorage.setItem('authenticated', 'true');
-    toast.success('Google login successful!');
-    navigate('/');
+    // This is a placeholder for OAuth login
+    // We'll implement this later if needed
+    setError('Google login is not yet implemented');
   };
 
   return (
@@ -69,6 +64,12 @@ const Login = () => {
             <CardDescription>Enter your credentials to sign in</CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleEmailLogin} className="space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="email">Email</Label>
@@ -81,6 +82,7 @@ const Login = () => {
                     className="pl-10"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -100,6 +102,7 @@ const Login = () => {
                     className="pl-10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -123,6 +126,7 @@ const Login = () => {
               variant="outline" 
               className="w-full"
               onClick={handleGoogleLogin}
+              disabled={isLoading}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path

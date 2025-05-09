@@ -10,6 +10,9 @@ export interface FoodItem {
   unit: string;
   notes?: string;
   imageUrl?: string;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type ExpiryStatus = 'safe' | 'warning' | 'danger' | 'expired';
@@ -21,4 +24,16 @@ export interface Notification {
   itemId?: string;
   read: boolean;
   date: string;
+  userId?: string;
+  createdAt?: string;
+}
+
+export interface UserSettings {
+  id: string;
+  userId: string;
+  theme?: string;
+  notificationEnabled: boolean;
+  expiryWarningDays: number;
+  createdAt: string;
+  updatedAt?: string;
 }
