@@ -23,22 +23,51 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkUser = async () => {
-      setIsLoading(true);
+    let mounted = true;
+
+    const initializeAuth = async () => {
       try {
-        const userData = await getCurrentUser();
-        setUser(userData);
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        if (session && session.user && mounted) {
+          const userData: UserData = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name
+          };
+          setUser(userData);
+        } else if (mounted) {
+          setUser(null);
+        }
       } catch (error) {
-        console.error('Error checking authentication:', error);
-        setUser(null);
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (!mounted) return;
+
         if (session && session.user) {
           const userData: UserData = {
             id: session.user.id,
@@ -58,14 +87,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else {
           setUser(null);
         }
+        
         setIsLoading(false);
       }
     );
 
-    // Check initial session
-    checkUser();
+    // Initialize auth state
+    initializeAuth();
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
