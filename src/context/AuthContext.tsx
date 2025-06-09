@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { signIn, signOut, signUp, UserCredentials, UserData, getCurrentUser } from '@/services/authService';
 import { migrateLocalStorageToSupabase } from '@/services/foodItemService';
 import { useNavigate } from 'react-router-dom';

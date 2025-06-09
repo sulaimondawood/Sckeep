@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { FoodItem } from '@/types/food';
 import { v4 as uuidv4 } from 'uuid';
 import { getCurrentUser } from './authService';
