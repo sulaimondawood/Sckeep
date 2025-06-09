@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUser } from './authService';
 
 // Upload an image to Supabase Storage
