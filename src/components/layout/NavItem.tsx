@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavItemProps {
   icon: React.ElementType;
@@ -22,15 +22,13 @@ const NavItem: React.FC<NavItemProps> = ({
   onClick,
   isLogout = false 
 }) => {
-  const navigate = useNavigate();
+  const { logout } = useAuth();
   
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     if (isLogout) {
       e.preventDefault();
-      // In a real app, this would call your auth logout function
-      localStorage.removeItem('authenticated');
-      toast.success('Logged out successfully');
-      navigate('/login');
+      await logout();
+      return;
     }
     
     if (onClick) {
