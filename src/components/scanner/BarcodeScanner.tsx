@@ -10,23 +10,48 @@ interface BarcodeScannerProps {
 
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
   const [error, setError] = useState<string | null>(null);
+  const [keyBuffer, setKeyBuffer] = useState<string>('');
+  const [lastKeyTime, setLastKeyTime] = useState<number>(0);
   const { isConnected: scannerConnected } = useBarcodeScanner();
   
   useEffect(() => {
-    // In a real application, this would use a library like quagga.js or zxing
-    // For this demo, we'll simulate a barcode scan after a short delay
-    
-    const timer = setTimeout(() => {
-      // Generate a random EAN-13 like barcode
-      const randomBarcode = Array.from({ length: 13 }, () => 
-        Math.floor(Math.random() * 10)
-      ).join('');
+    const handleKeyPress = (event: KeyboardEvent) => {
+      const currentTime = Date.now();
       
-      onScan(randomBarcode);
-    }, 3000);
+      // If more than 100ms has passed since last key, reset buffer
+      if (currentTime - lastKeyTime > 100) {
+        setKeyBuffer('');
+      }
+      
+      setLastKeyTime(currentTime);
+      
+      if (event.key === 'Enter') {
+        // Barcode scan complete
+        if (keyBuffer.length >= 8) { // Minimum barcode length
+          onScan(keyBuffer);
+          setKeyBuffer('');
+        }
+      } else if (event.key.length === 1) {
+        // Regular character
+        setKeyBuffer(prev => prev + event.key);
+      }
+    };
     
-    return () => clearTimeout(timer);
-  }, [onScan]);
+    // Add event listener when component mounts
+    window.addEventListener('keydown', handleKeyPress);
+    
+    // If no scanner is detected after 5 seconds, suggest camera scanning
+    const timer = setTimeout(() => {
+      if (!scannerConnected) {
+        onError("No barcode scanner detected. Please try the camera scanner instead.");
+      }
+    }, 5000);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+      clearTimeout(timer);
+    };
+  }, [onScan, onError, scannerConnected, keyBuffer, lastKeyTime]);
   
   useEffect(() => {
     if (error) {
@@ -50,9 +75,17 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
       </div>
       <div className="absolute bottom-4 left-0 right-0 flex justify-center">
         <div className="px-3 py-1 bg-black/50 rounded-full text-white text-xs">
-          {scannerConnected ? "Scanner detected - Ready to scan" : "Scanning (No dedicated scanner detected)"}
+          {scannerConnected ? "Scanner detected - Ready to scan" : "Waiting for barcode scanner..."}
         </div>
       </div>
+      
+      {keyBuffer && (
+        <div className="absolute top-4 left-0 right-0 flex justify-center">
+          <div className="px-3 py-1 bg-blue-500/80 rounded-full text-white text-xs">
+            Reading: {keyBuffer}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

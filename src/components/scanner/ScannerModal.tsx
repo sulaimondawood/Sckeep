@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,26 +18,23 @@ interface ScannerModalProps {
 }
 
 const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComplete }) => {
-  const [activeTab, setActiveTab] = useState<string>("barcode");
+  const [activeTab, setActiveTab] = useState<string>("camera"); // Default to camera tab
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const { toast: uiToast } = useToast();
   const { isConnected: scannerConnected, lastDetectionMethod, bluetoothAvailable } = useBarcodeScanner();
 
   useEffect(() => {
-    // If scanner is not detected, recommend switching to camera or manual entry
-    if (open && activeTab === "barcode" && !scannerConnected && !isScanning) {
-      const timer = setTimeout(() => {
-        uiToast({
-          title: "Barcode Scanner",
-          description: "No scanner detected. Consider using the camera or manual entry.",
-          variant: "default"
-        });
-      }, 3000);
-      
-      return () => clearTimeout(timer);
+    // If scanner is detected, switch to barcode tab
+    if (scannerConnected && activeTab === "camera") {
+      setActiveTab("barcode");
+      uiToast({
+        title: "Barcode Scanner Detected",
+        description: "Switched to barcode scanner mode",
+        variant: "default"
+      });
     }
-  }, [open, activeTab, scannerConnected, isScanning, uiToast]);
+  }, [scannerConnected, activeTab, uiToast]);
 
   const handleScan = (data: string) => {
     setScannedData(data);
@@ -106,65 +102,24 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
           <DialogTitle>Add New Item</DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="barcode" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="camera" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-2">
-            <TabsTrigger value="barcode">Barcode</TabsTrigger>
             <TabsTrigger value="camera">Camera</TabsTrigger>
+            <TabsTrigger value="barcode">Barcode</TabsTrigger>
             <TabsTrigger value="manual">Manual</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="barcode" className="py-4">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="flex justify-center mb-4">
-                <ScanBarcode size={48} className="text-primary" />
-              </div>
-              
-              {renderScannerStatus()}
-              
-              {!isScanning ? (
-                <Button onClick={handleStartScanning}>
-                  Start Barcode Scanner
-                </Button>
-              ) : (
-                <div className="w-full">
-                  <BarcodeScanner onScan={handleScan} onError={(error) => {
-                    uiToast({
-                      title: "Scanner Error",
-                      description: error,
-                      variant: "destructive"
-                    });
-                    setIsScanning(false);
-                  }} />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsScanning(false)}
-                    className="mt-4 w-full"
-                  >
-                    Cancel Scanning
-                  </Button>
-                </div>
-              )}
-              
-              <p className="text-center text-sm text-muted-foreground mt-2">
-                Position the barcode in front of the scanner
-              </p>
-              
-              <div className="flex justify-center mt-4">
-                <Button 
-                  variant="link" 
-                  onClick={() => setActiveTab("camera")}
-                  className="text-sm"
-                >
-                  No barcode scanner? Use camera instead
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
           
           <TabsContent value="camera" className="py-4">
             <div className="flex flex-col items-center space-y-4">
               <div className="flex justify-center mb-4">
                 <Camera size={48} className="text-primary" />
+              </div>
+              
+              <div className="text-center mb-4">
+                <h3 className="font-medium mb-2">Use Your Phone's Camera</h3>
+                <p className="text-sm text-muted-foreground">
+                  Point your camera at a barcode to scan it automatically
+                </p>
               </div>
               
               {!isScanning ? (
@@ -191,9 +146,59 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
                 </div>
               )}
               
+              <div className="text-center text-xs text-muted-foreground mt-4 space-y-1">
+                <p>• Make sure the barcode is well-lit</p>
+                <p>• Hold your phone steady</p>
+                <p>• Try different angles if scanning fails</p>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="barcode" className="py-4">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex justify-center mb-4">
+                <ScanBarcode size={48} className="text-primary" />
+              </div>
+              
+              {renderScannerStatus()}
+              
+              {!isScanning ? (
+                <Button onClick={handleStartScanning} disabled={!scannerConnected}>
+                  {scannerConnected ? "Start Barcode Scanner" : "No Scanner Detected"}
+                </Button>
+              ) : (
+                <div className="w-full">
+                  <BarcodeScanner onScan={handleScan} onError={(error) => {
+                    uiToast({
+                      title: "Scanner Error",
+                      description: error,
+                      variant: "destructive"
+                    });
+                    setIsScanning(false);
+                  }} />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsScanning(false)}
+                    className="mt-4 w-full"
+                  >
+                    Cancel Scanning
+                  </Button>
+                </div>
+              )}
+              
               <p className="text-center text-sm text-muted-foreground mt-2">
-                Position the barcode in the camera view
+                Use a dedicated USB or Bluetooth barcode scanner
               </p>
+              
+              <div className="flex justify-center mt-4">
+                <Button 
+                  variant="link" 
+                  onClick={() => setActiveTab("camera")}
+                  className="text-sm"
+                >
+                  No barcode scanner? Use your phone's camera instead
+                </Button>
+              </div>
             </div>
           </TabsContent>
           
