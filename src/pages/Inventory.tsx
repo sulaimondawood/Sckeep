@@ -13,58 +13,68 @@ import { Search, Filter, Barcode, RefreshCw, Package } from 'lucide-react';
 import FoodItemCard from '@/components/food/FoodItemCard';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from "sonner";
-import { mockFoodItems } from '@/data/mockData';
 import { FoodItem } from '@/types/food';
 import ScannerModal from '@/components/scanner/ScannerModal';
 import EditFoodItemDialog from '@/components/food/EditFoodItemDialog';
 import { v4 as uuidv4 } from 'uuid';
+import { 
+  getAllFoodItems, 
+  createFoodItem, 
+  updateFoodItem, 
+  deleteFoodItem,
+  migrateLocalStorageToSupabase 
+} from '@/services/foodItemService';
+import { checkExpiringItems } from '@/services/notificationService';
 
 interface InventoryProps {
   showDeleted?: boolean;
 }
 
 const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
-  const [foodItems, setFoodItems] = useState<FoodItem[]>(() => {
-    // Load food items from localStorage, fall back to mockData if none
-    const saved = localStorage.getItem('foodItems');
-    if (saved) {
-      return JSON.parse(saved);
-    } else {
-      // Update mock data to have mostly unexpired dates
-      return mockFoodItems.map((item, index) => {
-        // Make most items not expired (leave 1-2 expired)
-        if (index < mockFoodItems.length - 2) {
-          const futureDate = new Date();
-          // Random days in the future (1-30 days)
-          const daysToAdd = Math.floor(Math.random() * 30) + 1;
-          futureDate.setDate(futureDate.getDate() + daysToAdd);
-          return {
-            ...item,
-            expiryDate: futureDate.toISOString().split('T')[0]
-          };
-        }
-        return item;
-      });
-    }
-  });
-  
+  const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [deletedItems, setDeletedItems] = useState<FoodItem[]>(() => {
     const saved = localStorage.getItem('deletedItems');
     return saved ? JSON.parse(saved) : [];
   });
-  
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast: uiToast } = useToast();
 
-  // Save to localStorage whenever items change
+  // Load food items from Supabase
   useEffect(() => {
-    localStorage.setItem('foodItems', JSON.stringify(foodItems));
-  }, [foodItems]);
+    const loadFoodItems = async () => {
+      try {
+        setLoading(true);
+        
+        // Try to migrate localStorage data first
+        await migrateLocalStorageToSupabase();
+        
+        // Load items from Supabase
+        const items = await getAllFoodItems();
+        setFoodItems(items);
+        
+        // Check for expiring items and create notifications
+        await checkExpiringItems();
+      } catch (error) {
+        console.error('Error loading food items:', error);
+        uiToast({
+          title: "Error loading items",
+          description: "Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    loadFoodItems();
+  }, [uiToast]);
+
+  // Save deleted items to localStorage
   useEffect(() => {
     localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
   }, [deletedItems]);
@@ -83,30 +93,54 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
     }
   };
 
-  const handleSaveEdit = (updatedItem: FoodItem) => {
-    setFoodItems(prev => 
-      prev.map(item => item.id === updatedItem.id ? updatedItem : item)
-    );
-    
-    setIsEditDialogOpen(false);
-    setEditingItem(null);
-    
-    uiToast({
-      title: "Item Updated",
-      description: "Food item has been successfully updated.",
-    });
-  };
-
-  const handleDeleteItem = (id: string) => {
-    const itemToDelete = foodItems.find(item => item.id === id);
-    if (itemToDelete) {
-      setDeletedItems(prev => [...prev, itemToDelete]);
-      setFoodItems(foodItems.filter(item => item.id !== id));
+  const handleSaveEdit = async (updatedItem: FoodItem) => {
+    const result = await updateFoodItem(updatedItem);
+    if (result) {
+      setFoodItems(prev => 
+        prev.map(item => item.id === updatedItem.id ? result : item)
+      );
+      
+      setIsEditDialogOpen(false);
+      setEditingItem(null);
+      
+      // Check for expiring items after update
+      await checkExpiringItems();
       
       uiToast({
-        title: "Item Removed",
-        description: "Food item has been moved to recently deleted items.",
+        title: "Item Updated",
+        description: "Food item has been successfully updated.",
       });
+    } else {
+      uiToast({
+        title: "Update Error",
+        description: "Failed to update the item.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    const itemToDelete = foodItems.find(item => item.id === id);
+    if (itemToDelete) {
+      const success = await deleteFoodItem(id);
+      if (success) {
+        setDeletedItems(prev => [...prev, itemToDelete]);
+        setFoodItems(foodItems.filter(item => item.id !== id));
+        
+        // Check for expiring items after deletion
+        await checkExpiringItems();
+        
+        uiToast({
+          title: "Item Removed",
+          description: "Food item has been moved to recently deleted items.",
+        });
+      } else {
+        uiToast({
+          title: "Delete Error",
+          description: "Failed to delete the item.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -114,9 +148,8 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
     setScannerOpen(true);
   };
 
-  const handleScanComplete = (itemData: any) => {
-    const newItem: FoodItem = {
-      id: uuidv4(),
+  const handleScanComplete = async (itemData: any) => {
+    const newItemData = {
       name: itemData.name,
       category: itemData.category,
       expiryDate: itemData.expiryDate,
@@ -128,24 +161,59 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
       imageUrl: itemData.imageUrl
     };
     
-    setFoodItems(prev => [newItem, ...prev]);
-    setScannerOpen(false);
-    
-    toast.success(`${itemData.name} added to inventory`, {
-      description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
-    });
+    const result = await createFoodItem(newItemData);
+    if (result) {
+      setFoodItems(prev => [result, ...prev]);
+      setScannerOpen(false);
+      
+      // Check for expiring items after adding new item
+      await checkExpiringItems();
+      
+      toast.success(`${itemData.name} added to inventory`, {
+        description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
+      });
+    } else {
+      uiToast({
+        title: "Add Error",
+        description: "Failed to add the item.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleRestoreItem = (id: string) => {
+  const handleRestoreItem = async (id: string) => {
     const itemToRestore = deletedItems.find(item => item.id === id);
     if (itemToRestore) {
-      setFoodItems(prev => [...prev, itemToRestore]);
-      setDeletedItems(deletedItems.filter(item => item.id !== id));
-      
-      uiToast({
-        title: "Item Restored",
-        description: "Food item has been restored to your inventory.",
+      const result = await createFoodItem({
+        name: itemToRestore.name,
+        category: itemToRestore.category,
+        expiryDate: itemToRestore.expiryDate,
+        addedDate: itemToRestore.addedDate,
+        barcode: itemToRestore.barcode,
+        quantity: itemToRestore.quantity,
+        unit: itemToRestore.unit,
+        notes: itemToRestore.notes,
+        imageUrl: itemToRestore.imageUrl
       });
+      
+      if (result) {
+        setFoodItems(prev => [...prev, result]);
+        setDeletedItems(deletedItems.filter(item => item.id !== id));
+        
+        // Check for expiring items after restoration
+        await checkExpiringItems();
+        
+        uiToast({
+          title: "Item Restored",
+          description: "Food item has been restored to your inventory.",
+        });
+      } else {
+        uiToast({
+          title: "Restore Error",
+          description: "Failed to restore the item.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -166,6 +234,17 @@ const Inventory: React.FC<InventoryProps> = ({ showDeleted = false }) => {
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading inventory...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen">
