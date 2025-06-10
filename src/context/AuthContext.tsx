@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import { signIn, signOut, signUp, UserCredentials, UserData, getCurrentUser } from '@/services/authService';
 import { migrateLocalStorageToSupabase } from '@/services/foodItemService';
+import { getUserSettings, createDefaultUserSettings } from '@/services/userSettingsService';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -21,6 +22,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  const initializeUserData = async (userData: UserData) => {
+    try {
+      // Initialize user settings if they don't exist
+      let settings = await getUserSettings();
+      if (!settings) {
+        settings = await createDefaultUserSettings();
+      }
+      
+      // Migrate localStorage data to Supabase
+      await migrateLocalStorageToSupabase();
+    } catch (error) {
+      console.error('Error initializing user data:', error);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -46,6 +62,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             name: session.user.user_metadata?.name
           };
           setUser(userData);
+          await initializeUserData(userData);
         } else if (mounted) {
           setUser(null);
         }
@@ -76,13 +93,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           };
           setUser(userData);
           
-          // If newly signed in, migrate localStorage data
+          // If newly signed in, initialize user data
           if (event === 'SIGNED_IN') {
-            try {
-              await migrateLocalStorageToSupabase();
-            } catch (err) {
-              console.error('Error migrating data:', err);
-            }
+            await initializeUserData(userData);
           }
         } else {
           setUser(null);
@@ -149,7 +162,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return false;
       }
       
-      toast.success('Account created successfully! Please verify your email.');
+      toast.success('Account created successfully! Please check your email to verify your account.');
       navigate('/login');
       return true;
     } catch (error: any) {
