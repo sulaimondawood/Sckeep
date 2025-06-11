@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,7 @@ import {
   checkExpiringItems
 } from '@/services/notificationService';
 import { getUserSettings, updateUserSettings } from '@/services/userSettingsService';
+import { useAuth } from '@/context/AuthContext';
 
 const Notifications: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -27,18 +27,24 @@ const Notifications: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
   // Load notifications and settings
   useEffect(() => {
     const loadData = async () => {
+      if (!isAuthenticated || !user) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        console.log('Loading notifications data...');
+        console.log('Loading notifications data for user:', user.id);
         setLoading(true);
         setError(null);
         
         // Load notifications and settings in parallel
         const [notificationsData, settingsData] = await Promise.all([
-          getNotifications(),
+          getNotifications(user.id),
           getUserSettings()
         ]);
         
@@ -50,10 +56,10 @@ const Notifications: React.FC = () => {
         }
         
         // Check for new expiring items
-        await checkExpiringItems();
+        await checkExpiringItems(user.id);
         
         // Reload notifications after checking for new ones
-        const updatedNotifications = await getNotifications();
+        const updatedNotifications = await getNotifications(user.id);
         setNotifications(updatedNotifications || []);
       } catch (error) {
         console.error('Error loading notifications data:', error);
@@ -69,10 +75,12 @@ const Notifications: React.FC = () => {
     };
 
     loadData();
-  }, [toast]);
+  }, [toast, isAuthenticated, user]);
 
   // Set up real-time subscription for notifications
   useEffect(() => {
+    if (!user) return;
+
     const channel = supabase
       .channel('notifications-changes')
       .on(
@@ -86,7 +94,7 @@ const Notifications: React.FC = () => {
           // Reload notifications when there are changes
           console.log('Notifications updated, reloading...');
           try {
-            const updatedNotifications = await getNotifications();
+            const updatedNotifications = await getNotifications(user.id);
             setNotifications(updatedNotifications || []);
           } catch (error) {
             console.error('Error reloading notifications:', error);
@@ -98,10 +106,12 @@ const Notifications: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
 
   // Set up real-time subscription for food items to update notifications
   useEffect(() => {
+    if (!user) return;
+
     const channel = supabase
       .channel('food-items-changes')
       .on(
@@ -115,8 +125,8 @@ const Notifications: React.FC = () => {
           // When food items change, check for new expiring items and reload notifications
           console.log('Food items updated, checking for expiring items...');
           try {
-            await checkExpiringItems();
-            const updatedNotifications = await getNotifications();
+            await checkExpiringItems(user.id);
+            const updatedNotifications = await getNotifications(user.id);
             setNotifications(updatedNotifications || []);
           } catch (error) {
             console.error('Error updating notifications after food items change:', error);
@@ -128,15 +138,17 @@ const Notifications: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
 
   // Check for expiring items periodically
   useEffect(() => {
+    if (!user) return;
+
     const interval = setInterval(async () => {
       console.log('Checking expiry dates...');
       try {
-        await checkExpiringItems();
-        const updatedNotifications = await getNotifications();
+        await checkExpiringItems(user.id);
+        const updatedNotifications = await getNotifications(user.id);
         setNotifications(updatedNotifications || []);
       } catch (error) {
         console.error('Error in periodic expiry check:', error);
@@ -144,7 +156,7 @@ const Notifications: React.FC = () => {
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const handleMarkAsRead = async (id: string) => {
     const success = await markNotificationAsRead(id);
@@ -181,7 +193,9 @@ const Notifications: React.FC = () => {
   };
 
   const handleMarkAllAsRead = async () => {
-    const success = await markAllNotificationsAsRead();
+    if (!user) return;
+
+    const success = await markAllNotificationsAsRead(user.id);
     if (success) {
       setNotifications(notifications.map(notif => ({ ...notif, read: true })));
       toast({
@@ -264,6 +278,16 @@ const Notifications: React.FC = () => {
       </CardContent>
     </Card>
   );
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view your notifications.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

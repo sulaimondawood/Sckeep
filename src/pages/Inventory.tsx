@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -24,6 +23,7 @@ import {
   migrateLocalStorageToSupabase 
 } from '@/services/foodItemService';
 import { checkExpiringItems } from '@/services/notificationService';
+import { useAuth } from '@/context/AuthContext';
 
 const Inventory: React.FC = () => {
   const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
@@ -34,24 +34,30 @@ const Inventory: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast: uiToast } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
   // Load food items from Supabase
   useEffect(() => {
     const loadFoodItems = async () => {
+      if (!isAuthenticated || !user) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        console.log('Loading food items...');
+        console.log('Loading food items for user:', user.id);
         setLoading(true);
         
         // Try to migrate localStorage data first
-        await migrateLocalStorageToSupabase();
+        await migrateLocalStorageToSupabase(user.id);
         
         // Load items from Supabase
-        const items = await getAllFoodItems();
+        const items = await getAllFoodItems(user.id);
         console.log('Loaded food items:', items);
         setFoodItems(items);
         
         // Check for expiring items and create notifications
-        await checkExpiringItems();
+        await checkExpiringItems(user.id);
       } catch (error) {
         console.error('Error loading food items:', error);
         uiToast({
@@ -65,7 +71,7 @@ const Inventory: React.FC = () => {
     };
 
     loadFoodItems();
-  }, [uiToast]);
+  }, [uiToast, isAuthenticated, user]);
 
   const handleEditItem = (id: string) => {
     const item = foodItems.find(item => item.id === id);
@@ -82,7 +88,9 @@ const Inventory: React.FC = () => {
   };
 
   const handleSaveEdit = async (updatedItem: FoodItem) => {
-    const result = await updateFoodItem(updatedItem);
+    if (!user) return;
+
+    const result = await updateFoodItem(updatedItem, user.id);
     if (result) {
       setFoodItems(prev => 
         prev.map(item => item.id === updatedItem.id ? result : item)
@@ -92,7 +100,7 @@ const Inventory: React.FC = () => {
       setEditingItem(null);
       
       // Check for expiring items after update
-      await checkExpiringItems();
+      await checkExpiringItems(user.id);
       
       uiToast({
         title: "Item Updated",
@@ -108,12 +116,14 @@ const Inventory: React.FC = () => {
   };
 
   const handleDeleteItem = async (id: string) => {
-    const success = await deleteFoodItem(id);
+    if (!user) return;
+
+    const success = await deleteFoodItem(id, user.id);
     if (success) {
       setFoodItems(foodItems.filter(item => item.id !== id));
       
       // Check for expiring items after deletion
-      await checkExpiringItems();
+      await checkExpiringItems(user.id);
       
       uiToast({
         title: "Item Deleted",
@@ -133,6 +143,8 @@ const Inventory: React.FC = () => {
   };
 
   const handleScanComplete = async (itemData: any) => {
+    if (!user) return;
+
     const newItemData = {
       name: itemData.name,
       category: itemData.category,
@@ -145,13 +157,13 @@ const Inventory: React.FC = () => {
       imageUrl: itemData.imageUrl
     };
     
-    const result = await createFoodItem(newItemData);
+    const result = await createFoodItem(newItemData, user.id);
     if (result) {
       setFoodItems(prev => [result, ...prev]);
       setScannerOpen(false);
       
       // Check for expiring items after adding new item
-      await checkExpiringItems();
+      await checkExpiringItems(user.id);
       
       toast.success(`${itemData.name} added to inventory`, {
         description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
@@ -173,6 +185,16 @@ const Inventory: React.FC = () => {
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view your inventory.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FoodItem } from '@/types/food';
 import { v4 as uuidv4 } from 'uuid';
-import { getCurrentUser } from './authService';
 
 // Convert from Supabase format to our app format
 const mapFromSupabase = (item: any): FoodItem => ({
@@ -37,18 +36,13 @@ const mapToSupabase = (item: FoodItem, userId: string) => ({
   updated_at: new Date().toISOString()
 });
 
-// Get all food items for current user
-export const getAllFoodItems = async (): Promise<FoodItem[]> => {
+// Get all food items for a specific user
+export const getAllFoodItems = async (userId: string): Promise<FoodItem[]> => {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
     const { data, error } = await supabase
       .from('food_items')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -83,17 +77,12 @@ export const getFoodItemById = async (id: string): Promise<FoodItem | null> => {
 };
 
 // Create a new food item
-export const createFoodItem = async (item: Omit<FoodItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<FoodItem | null> => {
+export const createFoodItem = async (item: Omit<FoodItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, userId: string): Promise<FoodItem | null> => {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
     const newItem = {
       id: uuidv4(),
       ...item,
-      user_id: user.id,
+      user_id: userId,
       created_at: new Date().toISOString(),
       updated_at: null,
       expiry_date: item.expiryDate,
@@ -121,16 +110,11 @@ export const createFoodItem = async (item: Omit<FoodItem, 'id' | 'userId' | 'cre
 };
 
 // Update an existing food item
-export const updateFoodItem = async (item: FoodItem): Promise<FoodItem | null> => {
+export const updateFoodItem = async (item: FoodItem, userId: string): Promise<FoodItem | null> => {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
     const { data, error } = await supabase
       .from('food_items')
-      .update(mapToSupabase(item, user.id))
+      .update(mapToSupabase(item, userId))
       .eq('id', item.id)
       .select()
       .single();
@@ -147,18 +131,13 @@ export const updateFoodItem = async (item: FoodItem): Promise<FoodItem | null> =
 };
 
 // Delete a food item
-export const deleteFoodItem = async (id: string): Promise<boolean> => {
+export const deleteFoodItem = async (id: string, userId: string): Promise<boolean> => {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
     const { error } = await supabase
       .from('food_items')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     if (error) {
       throw error;
@@ -172,13 +151,8 @@ export const deleteFoodItem = async (id: string): Promise<boolean> => {
 };
 
 // Migration utility: Move localStorage data to Supabase
-export const migrateLocalStorageToSupabase = async (): Promise<boolean> => {
+export const migrateLocalStorageToSupabase = async (userId: string): Promise<boolean> => {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
     // Get food items from localStorage
     const localItems = localStorage.getItem('foodItems');
     if (!localItems) {
@@ -199,7 +173,7 @@ export const migrateLocalStorageToSupabase = async (): Promise<boolean> => {
       unit: item.unit,
       notes: item.notes || null,
       image_url: item.imageUrl || null,
-      user_id: user.id,
+      user_id: userId,
       created_at: new Date().toISOString(),
       updated_at: null
     }));
