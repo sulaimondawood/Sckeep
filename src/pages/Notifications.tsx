@@ -25,13 +25,16 @@ const Notifications: React.FC = () => {
   const [systemNotifications, setSystemNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Load notifications and settings
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('Loading notifications data...');
         setLoading(true);
+        setError(null);
         
         // Load notifications and settings in parallel
         const [notificationsData, settingsData] = await Promise.all([
@@ -39,7 +42,8 @@ const Notifications: React.FC = () => {
           getUserSettings()
         ]);
         
-        setNotifications(notificationsData);
+        console.log('Loaded notifications:', notificationsData);
+        setNotifications(notificationsData || []);
         
         if (settingsData) {
           setExpiryNotifications(settingsData.notificationEnabled);
@@ -50,9 +54,10 @@ const Notifications: React.FC = () => {
         
         // Reload notifications after checking for new ones
         const updatedNotifications = await getNotifications();
-        setNotifications(updatedNotifications);
+        setNotifications(updatedNotifications || []);
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error loading notifications data:', error);
+        setError('Failed to load notifications. Please try again.');
         toast({
           title: "Error loading notifications",
           description: "Please try again later.",
@@ -80,8 +85,12 @@ const Notifications: React.FC = () => {
         async () => {
           // Reload notifications when there are changes
           console.log('Notifications updated, reloading...');
-          const updatedNotifications = await getNotifications();
-          setNotifications(updatedNotifications);
+          try {
+            const updatedNotifications = await getNotifications();
+            setNotifications(updatedNotifications || []);
+          } catch (error) {
+            console.error('Error reloading notifications:', error);
+          }
         }
       )
       .subscribe();
@@ -105,9 +114,13 @@ const Notifications: React.FC = () => {
         async () => {
           // When food items change, check for new expiring items and reload notifications
           console.log('Food items updated, checking for expiring items...');
-          await checkExpiringItems();
-          const updatedNotifications = await getNotifications();
-          setNotifications(updatedNotifications);
+          try {
+            await checkExpiringItems();
+            const updatedNotifications = await getNotifications();
+            setNotifications(updatedNotifications || []);
+          } catch (error) {
+            console.error('Error updating notifications after food items change:', error);
+          }
         }
       )
       .subscribe();
@@ -121,9 +134,13 @@ const Notifications: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       console.log('Checking expiry dates...');
-      await checkExpiringItems();
-      const updatedNotifications = await getNotifications();
-      setNotifications(updatedNotifications);
+      try {
+        await checkExpiringItems();
+        const updatedNotifications = await getNotifications();
+        setNotifications(updatedNotifications || []);
+      } catch (error) {
+        console.error('Error in periodic expiry check:', error);
+      }
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
@@ -254,6 +271,19 @@ const Notifications: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading notifications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
         </div>
       </div>
     );

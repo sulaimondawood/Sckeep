@@ -1,12 +1,10 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { 
   Settings, 
   Moon,
   Sun,
   Clock,
-  Trash2,
   ChevronUp,
   ChevronDown,
   Bell
@@ -21,7 +19,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { 
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 
@@ -111,7 +108,7 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
             </CollapsibleContent>
           </Collapsible>
           
-          {/* Notification Frequency - Removed purple colors */}
+          {/* Notification Frequency */}
           <Collapsible
             open={notificationFrequencyOpen}
             onOpenChange={setNotificationFrequencyOpen}
@@ -164,22 +161,6 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
               </div>
             </CollapsibleContent>
           </Collapsible>
-          
-          {/* Recently Deleted Items */}
-          <DropdownMenuItem asChild className="px-0 py-0 focus:bg-transparent">
-            <Link to="/deleted-items" className="w-full">
-              <Button
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start gap-2 rounded-none",
-                  isRouteActive("/deleted-items") ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
-                )}
-              >
-                <Trash2 size={18} />
-                <span>Recently Deleted</span>
-              </Button>
-            </Link>
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

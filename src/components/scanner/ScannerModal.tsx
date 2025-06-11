@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
-import { Camera, ScanBarcode, Wifi, WifiOff, AlertTriangle } from "lucide-react";
+import { Camera } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import BarcodeScanner from "./BarcodeScanner";
 import CameraScanner from "./CameraScanner";
 import ManualEntryForm from "./ManualEntryForm";
-import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
 
 interface ScannerModalProps {
   open: boolean;
@@ -18,23 +17,10 @@ interface ScannerModalProps {
 }
 
 const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComplete }) => {
-  const [activeTab, setActiveTab] = useState<string>("camera"); // Default to camera tab
+  const [activeTab, setActiveTab] = useState<string>("camera");
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const { toast: uiToast } = useToast();
-  const { isConnected: scannerConnected, lastDetectionMethod, bluetoothAvailable } = useBarcodeScanner();
-
-  useEffect(() => {
-    // If scanner is detected, switch to barcode tab
-    if (scannerConnected && activeTab === "camera") {
-      setActiveTab("barcode");
-      uiToast({
-        title: "Barcode Scanner Detected",
-        description: "Switched to barcode scanner mode",
-        variant: "default"
-      });
-    }
-  }, [scannerConnected, activeTab, uiToast]);
 
   const handleScan = (data: string) => {
     setScannedData(data);
@@ -77,24 +63,6 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
     onScanComplete(formData);
   };
 
-  const renderScannerStatus = () => {
-    if (scannerConnected) {
-      return (
-        <div className="flex items-center gap-2 text-sm text-green-600">
-          <Wifi size={16} />
-          <span>Scanner connected</span>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <WifiOff size={16} />
-        <span>No scanner detected</span>
-      </div>
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden">
@@ -103,9 +71,8 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
         </DialogHeader>
         
         <Tabs defaultValue="camera" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-2">
+          <TabsList className="grid w-full grid-cols-2 mb-2">
             <TabsTrigger value="camera">Camera</TabsTrigger>
-            <TabsTrigger value="barcode">Barcode</TabsTrigger>
             <TabsTrigger value="manual">Manual</TabsTrigger>
           </TabsList>
           
@@ -154,54 +121,6 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
             </div>
           </TabsContent>
           
-          <TabsContent value="barcode" className="py-4">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="flex justify-center mb-4">
-                <ScanBarcode size={48} className="text-primary" />
-              </div>
-              
-              {renderScannerStatus()}
-              
-              {!isScanning ? (
-                <Button onClick={handleStartScanning} disabled={!scannerConnected}>
-                  {scannerConnected ? "Start Barcode Scanner" : "No Scanner Detected"}
-                </Button>
-              ) : (
-                <div className="w-full">
-                  <BarcodeScanner onScan={handleScan} onError={(error) => {
-                    uiToast({
-                      title: "Scanner Error",
-                      description: error,
-                      variant: "destructive"
-                    });
-                    setIsScanning(false);
-                  }} />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsScanning(false)}
-                    className="mt-4 w-full"
-                  >
-                    Cancel Scanning
-                  </Button>
-                </div>
-              )}
-              
-              <p className="text-center text-sm text-muted-foreground mt-2">
-                Use a dedicated USB or Bluetooth barcode scanner
-              </p>
-              
-              <div className="flex justify-center mt-4">
-                <Button 
-                  variant="link" 
-                  onClick={() => setActiveTab("camera")}
-                  className="text-sm"
-                >
-                  No barcode scanner? Use your phone's camera instead
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-          
           <TabsContent value="manual" className="py-2">
             <ScrollArea className="h-[60vh]">
               <ManualEntryForm 
@@ -211,13 +130,6 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
             </ScrollArea>
           </TabsContent>
         </Tabs>
-
-        {!bluetoothAvailable && activeTab === "barcode" && (
-          <div className="text-sm flex items-center gap-2 mt-4 text-yellow-600 bg-yellow-50 p-2 rounded-md">
-            <AlertTriangle size={16} />
-            <span>Bluetooth API not available in this browser. Scanner detection may be limited.</span>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );
