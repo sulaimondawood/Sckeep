@@ -11,6 +11,7 @@ const CameraScanner: React.FC<CameraScannerProps> = ({ onScan, onError }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasCamera, setHasCamera] = useState<boolean>(true);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [scannedCode, setScannedCode] = useState<string>('');
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   
   useEffect(() => {
@@ -41,14 +42,22 @@ const CameraScanner: React.FC<CameraScannerProps> = ({ onScan, onError }) => {
               videoRef.current,
               (result, error) => {
                 if (result) {
-                  // Successfully scanned a barcode
-                  console.log('Barcode detected:', result.getText());
-                  onScan(result.getText());
-                  setIsScanning(false);
+                  const barcodeText = result.getText();
+                  console.log('Barcode detected:', barcodeText);
+                  setScannedCode(barcodeText);
                   
-                  // Stop scanning after successful scan
-                  if (codeReaderRef.current) {
-                    codeReaderRef.current.reset();
+                  // Validate that this looks like a real barcode
+                  if (isValidBarcode(barcodeText)) {
+                    onScan(barcodeText);
+                    setIsScanning(false);
+                    
+                    // Stop scanning after successful scan
+                    if (codeReaderRef.current) {
+                      codeReaderRef.current.reset();
+                    }
+                  } else {
+                    console.warn('Invalid barcode format detected:', barcodeText);
+                    onError(`Invalid barcode format: ${barcodeText}. Please try scanning again.`);
                   }
                 }
                 
@@ -68,6 +77,34 @@ const CameraScanner: React.FC<CameraScannerProps> = ({ onScan, onError }) => {
         setHasCamera(false);
         onError("Could not access camera. Please check permissions and ensure you're using HTTPS.");
       }
+    };
+    
+    // Validate barcode format
+    const isValidBarcode = (code: string): boolean => {
+      // Remove any whitespace
+      const cleanCode = code.trim();
+      
+      // Check for common barcode formats:
+      // UPC-A: 12 digits
+      // EAN-13: 13 digits  
+      // EAN-8: 8 digits
+      // Code-128: Variable length alphanumeric
+      // Minimum length should be 6 characters
+      if (cleanCode.length < 6) {
+        return false;
+      }
+      
+      // Check if it's all digits (UPC/EAN format)
+      if (/^\d+$/.test(cleanCode)) {
+        return [8, 12, 13, 14].includes(cleanCode.length);
+      }
+      
+      // Check if it's alphanumeric (Code-128 or other formats)
+      if (/^[A-Za-z0-9]+$/.test(cleanCode)) {
+        return cleanCode.length >= 6 && cleanCode.length <= 30;
+      }
+      
+      return false;
     };
     
     startCamera();
@@ -106,6 +143,15 @@ const CameraScanner: React.FC<CameraScannerProps> = ({ onScan, onError }) => {
               </div>
             </div>
           </div>
+          
+          {scannedCode && (
+            <div className="absolute top-4 left-0 right-0 flex justify-center">
+              <div className="px-3 py-1 bg-blue-500/80 rounded-full text-white text-xs max-w-xs">
+                Scanned: {scannedCode}
+              </div>
+            </div>
+          )}
+          
           <div className="absolute bottom-4 left-0 right-0 flex justify-center">
             <div className="px-3 py-1 bg-black/50 rounded-full text-white text-xs">
               {isScanning ? "Scanning for barcodes..." : "Ready to scan"}

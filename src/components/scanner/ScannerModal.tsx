@@ -22,36 +22,72 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const { toast: uiToast } = useToast();
 
-  const handleScan = (data: string) => {
+  const handleScan = async (data: string) => {
     setScannedData(data);
     setIsScanning(false);
+    
+    console.log('Barcode scanned:', data);
     toast.success("Barcode scanned successfully", {
       description: `Barcode: ${data}`
     });
 
-    // In a real app, we would fetch product details using the barcode
-    // For now, we'll simulate this with a delay
-    setTimeout(() => {
-      // If barcode lookup fails, prompt for manual entry
-      const productFound = Math.random() > 0.3; // 70% chance to "find" product
+    // In a real application, you would call a product lookup API here
+    // For now, we'll prompt the user to enter details manually with the barcode pre-filled
+    try {
+      // Attempt to lookup product information using the barcode
+      const productInfo = await lookupProductByBarcode(data);
       
-      if (productFound) {
+      if (productInfo) {
+        // If product found, use the retrieved information
         onScanComplete({
           barcode: data,
-          name: `Product ${data.substring(0, 4)}`,
-          category: "Scanned Item",
+          name: productInfo.name,
+          category: productInfo.category || "Scanned Item",
           quantity: 1,
-          unit: "pcs",
-          expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          unit: productInfo.unit || "pcs",
+          expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 2 weeks
+          notes: `Scanned barcode: ${data}`
         });
       } else {
+        // Product not found, switch to manual entry with barcode pre-filled
         uiToast({
           title: "Product not found",
-          description: "Please enter the details manually",
+          description: "Please enter the product details manually. The barcode has been saved.",
         });
         setActiveTab("manual");
       }
-    }, 1500);
+    } catch (error) {
+      console.error('Error looking up product:', error);
+      uiToast({
+        title: "Lookup failed",
+        description: "Please enter the product details manually. The barcode has been saved.",
+      });
+      setActiveTab("manual");
+    }
+  };
+
+  // Mock product lookup function - replace with real API call
+  const lookupProductByBarcode = async (barcode: string): Promise<any | null> => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Mock database of some common products (in a real app, this would be an API call)
+    const mockProducts: { [key: string]: any } = {
+      // Common test barcodes
+      "123456789012": { name: "Test Product", category: "Food", unit: "pcs" },
+      "072250007164": { name: "Coca-Cola", category: "Beverages", unit: "bottles" },
+      "038000356308": { name: "Kellogg's Corn Flakes", category: "Breakfast", unit: "boxes" },
+      "041220576302": { name: "Pepsi Cola", category: "Beverages", unit: "cans" },
+      // Add more real barcodes as needed
+    };
+    
+    // In a real application, you might use services like:
+    // - OpenFoodFacts API
+    // - UPC Database API
+    // - Barcode Lookup API
+    // For example: https://world.openfoodfacts.org/api/v0/product/${barcode}.json
+    
+    return mockProducts[barcode] || null;
   };
 
   const handleStartScanning = () => {
@@ -83,9 +119,9 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
               </div>
               
               <div className="text-center mb-4">
-                <h3 className="font-medium mb-2">Use Your Phone's Camera</h3>
+                <h3 className="font-medium mb-2">Scan Product Barcode</h3>
                 <p className="text-sm text-muted-foreground">
-                  Point your camera at a barcode to scan it automatically
+                  Point your camera at a product barcode to scan it automatically
                 </p>
               </div>
               
@@ -114,9 +150,10 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
               )}
               
               <div className="text-center text-xs text-muted-foreground mt-4 space-y-1">
-                <p>• Make sure the barcode is well-lit</p>
-                <p>• Hold your phone steady</p>
+                <p>• Make sure the barcode is well-lit and clearly visible</p>
+                <p>• Hold your phone steady about 6-8 inches away</p>
                 <p>• Try different angles if scanning fails</p>
+                <p>• Ensure the entire barcode fits within the red frame</p>
               </div>
             </div>
           </TabsContent>

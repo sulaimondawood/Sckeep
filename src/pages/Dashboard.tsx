@@ -17,10 +17,6 @@ import { Plus, AlertCircle, Info } from 'lucide-react';
 import FoodItemCard from '@/components/food/FoodItemCard';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from "sonner";
-import { 
-  mockFoodItems, 
-  mockNotifications 
-} from '@/data/mockData';
 import { getExpiryStatus } from '@/utils/expiryUtils';
 import { ExpiryStatus, FoodItem } from '@/types/food';
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
@@ -28,57 +24,68 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import ScannerModal from '@/components/scanner/ScannerModal';
 import EditFoodItemDialog from '@/components/food/EditFoodItemDialog';
-import { v4 as uuidv4 } from 'uuid';
+import { 
+  getAllFoodItems, 
+  createFoodItem, 
+  updateFoodItem, 
+  deleteFoodItem,
+  migrateLocalStorageToSupabase 
+} from '@/services/foodItemService';
+import { checkExpiringItems } from '@/services/notificationService';
+import { useAuth } from '@/context/AuthContext';
 
 const Dashboard: React.FC = () => {
-  const [foodItems, setFoodItems] = useState<FoodItem[]>(() => {
-    const saved = localStorage.getItem('foodItems');
-    if (saved) {
-      return JSON.parse(saved);
-    } else {
-      // Update mock data to have mostly unexpired dates
-      return mockFoodItems.map((item, index) => {
-        // Make most items not expired (leave 1-2 expired)
-        if (index < mockFoodItems.length - 2) {
-          const futureDate = new Date();
-          // Random days in the future (1-30 days)
-          const daysToAdd = Math.floor(Math.random() * 30) + 1;
-          futureDate.setDate(futureDate.getDate() + daysToAdd);
-          return {
-            ...item,
-            expiryDate: futureDate.toISOString().split('T')[0]
-          };
-        }
-        return item;
-      });
-    }
-  });
-  
-  const [deletedItems, setDeletedItems] = useState<FoodItem[]>(() => {
-    const saved = localStorage.getItem('deletedItems');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const [notifications] = useState(mockNotifications);
+  const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const { toast: uiToast } = useToast();
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { toast: uiToast } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
+  // Load food items from Supabase
   useEffect(() => {
-    localStorage.setItem('foodItems', JSON.stringify(foodItems));
-  }, [foodItems]);
+    const loadFoodItems = async () => {
+      if (!isAuthenticated || !user) {
+        setLoading(false);
+        return;
+      }
 
-  useEffect(() => {
-    localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
-  }, [deletedItems]);
+      try {
+        console.log('Loading food items for user:', user.id);
+        setLoading(true);
+        
+        // Try to migrate localStorage data first
+        await migrateLocalStorageToSupabase(user.id);
+        
+        // Load items from Supabase
+        const items = await getAllFoodItems(user.id);
+        console.log('Loaded food items:', items);
+        setFoodItems(items);
+        
+        // Check for expiring items and create notifications
+        await checkExpiringItems(user.id);
+      } catch (error) {
+        console.error('Error loading food items:', error);
+        uiToast({
+          title: "Error loading items",
+          description: "Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFoodItems();
+  }, [uiToast, isAuthenticated, user]);
 
   // Show push notifications on first dashboard load
   useEffect(() => {
     // Check if we've already shown the notification
     const notificationShown = sessionStorage.getItem('dashboardNotificationShown');
     
-    if (!notificationShown && 'Notification' in window) {
+    if (!notificationShown && 'Notification' in window && foodItems.length > 0) {
       sessionStorage.setItem('dashboardNotificationShown', 'true');
       
       // Show notification for expiring items
@@ -111,25 +118,41 @@ const Dashboard: React.FC = () => {
         }
       }
     }
-  }, []);
+  }, [foodItems]);
 
   const handleEditItem = (id: string) => {
-    const itemToEdit = foodItems.find(item => item.id === id);
-    if (itemToEdit) {
-      setEditingItem(itemToEdit);
+    const item = foodItems.find(item => item.id === id);
+    if (item) {
+      setEditingItem(item);
       setIsEditDialogOpen(true);
+    } else {
+      uiToast({
+        title: "Edit Error",
+        description: "Could not find the item to edit.",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleDeleteItem = (id: string) => {
-    const itemToDelete = foodItems.find(item => item.id === id);
-    if (itemToDelete) {
-      setDeletedItems(prev => [...prev, itemToDelete]);
+  const handleDeleteItem = async (id: string) => {
+    if (!user) return;
+
+    const success = await deleteFoodItem(id, user.id);
+    if (success) {
       setFoodItems(foodItems.filter(item => item.id !== id));
       
+      // Check for expiring items after deletion
+      await checkExpiringItems(user.id);
+      
       uiToast({
-        title: "Item Removed",
-        description: "Food item has been moved to recently deleted items.",
+        title: "Item Deleted",
+        description: "Food item has been permanently removed.",
+      });
+    } else {
+      uiToast({
+        title: "Delete Error",
+        description: "Failed to delete the item.",
+        variant: "destructive"
       });
     }
   };
@@ -138,9 +161,10 @@ const Dashboard: React.FC = () => {
     setScannerOpen(true);
   };
 
-  const handleScanComplete = (itemData: any) => {
-    const newItem: FoodItem = {
-      id: uuidv4(),
+  const handleScanComplete = async (itemData: any) => {
+    if (!user) return;
+
+    const newItemData = {
       name: itemData.name,
       category: itemData.category,
       expiryDate: itemData.expiryDate,
@@ -148,33 +172,58 @@ const Dashboard: React.FC = () => {
       barcode: itemData.barcode,
       quantity: itemData.quantity,
       unit: itemData.unit,
-      notes: itemData.notes
+      notes: itemData.notes,
+      imageUrl: itemData.imageUrl
     };
     
-    setFoodItems(prev => [newItem, ...prev]);
-    setScannerOpen(false);
-    
-    toast.success(`${itemData.name} added to inventory`, {
-      description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
-    });
+    const result = await createFoodItem(newItemData, user.id);
+    if (result) {
+      setFoodItems(prev => [result, ...prev]);
+      setScannerOpen(false);
+      
+      // Check for expiring items after adding new item
+      await checkExpiringItems(user.id);
+      
+      toast.success(`${itemData.name} added to inventory`, {
+        description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
+      });
+    } else {
+      uiToast({
+        title: "Add Error",
+        description: "Failed to add the item.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSaveEdit = (updatedItem: FoodItem) => {
-    setFoodItems(prevItems => 
-      prevItems.map(item => item.id === updatedItem.id ? updatedItem : item)
-    );
-    
-    setIsEditDialogOpen(false);
-    setEditingItem(null);
-    
-    uiToast({
-      title: "Item Updated",
-      description: "Food item has been successfully updated.",
-    });
+  const handleSaveEdit = async (updatedItem: FoodItem) => {
+    if (!user) return;
+
+    const result = await updateFoodItem(updatedItem, user.id);
+    if (result) {
+      setFoodItems(prev => 
+        prev.map(item => item.id === updatedItem.id ? result : item)
+      );
+      
+      setIsEditDialogOpen(false);
+      setEditingItem(null);
+      
+      // Check for expiring items after update
+      await checkExpiringItems(user.id);
+      
+      uiToast({
+        title: "Item Updated",
+        description: "Food item has been successfully updated.",
+      });
+    } else {
+      uiToast({
+        title: "Update Error",
+        description: "Failed to update the item.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const unreadNotifications = notifications.filter(n => !n.read);
-  
   const filterItemsByStatus = (status: ExpiryStatus) => {
     return foodItems.filter(item => getExpiryStatus(item.expiryDate) === status);
   };
@@ -218,6 +267,27 @@ const Dashboard: React.FC = () => {
     );
   };
 
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view your dashboard.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -228,7 +298,7 @@ const Dashboard: React.FC = () => {
         <div className="flex space-x-2">
           <Button variant="outline" className="space-x-1" onClick={() => window.location.href = '/notifications'}>
             <AlertCircle size={16} />
-            <span>{unreadNotifications.length}</span>
+            <span>Notifications</span>
           </Button>
           <Button className="space-x-1" onClick={handleAddNewItem}>
             <Plus size={16} />
@@ -290,7 +360,7 @@ const Dashboard: React.FC = () => {
                               </div>
                               <div className="mt-1">
                                 <span className="text-muted-foreground">
-                                  {data.value} items ({(data.value / foodItems.length * 100).toFixed(1)}%)
+                                  {data.value} items ({foodItems.length > 0 ? (data.value / foodItems.length * 100).toFixed(1) : 0}%)
                                 </span>
                               </div>
                             </div>
@@ -351,16 +421,26 @@ const Dashboard: React.FC = () => {
         </TabsList>
 
         <TabsContent value="all" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {foodItems.map((item) => (
-              <FoodItemCard
-                key={item.id}
-                item={item}
-                onEdit={handleEditItem}
-                onDelete={handleDeleteItem}
-              />
-            ))}
-          </div>
+          {foodItems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {foodItems.map((item) => (
+                <FoodItemCard
+                  key={item.id}
+                  item={item}
+                  onEdit={handleEditItem}
+                  onDelete={handleDeleteItem}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center p-8">
+              <p className="text-gray-500 dark:text-gray-400">No items in your inventory</p>
+              <Button onClick={handleAddNewItem} className="mt-4">
+                <Plus size={16} className="mr-2" />
+                Add your first item
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="critical" className="mt-0">
