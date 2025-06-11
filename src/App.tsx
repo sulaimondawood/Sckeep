@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -126,16 +125,6 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <AppLayout>
               <Analytics />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/deleted-items"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Inventory showDeleted={true} />
             </AppLayout>
           </ProtectedRoute>
         }
