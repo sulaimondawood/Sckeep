@@ -31,8 +31,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         settings = await createDefaultUserSettings();
       }
       
-      // Migrate localStorage data to Supabase
-      await migrateLocalStorageToSupabase();
+      // Migrate localStorage data to Supabase with user ID
+      await migrateLocalStorageToSupabase(userData.id);
     } catch (error) {
       console.error('Error initializing user data:', error);
     }

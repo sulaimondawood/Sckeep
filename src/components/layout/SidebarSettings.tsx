@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Moon,
@@ -21,6 +21,15 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import { 
+  getNotificationSettings, 
+  updateNotificationSettings, 
+  getStoredNotificationTime, 
+  getStoredNotificationFrequency,
+  scheduleNotificationCheck 
+} from '@/services/notificationSettingsService';
 
 interface SidebarSettingsProps {
   isRouteActive: (path: string) => boolean;
@@ -36,8 +45,109 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationTime, setNotificationTime] = useState('08:00');
   const [notificationTimeOpen, setNotificationTimeOpen] = useState(false);
-  const [notificationFrequency, setNotificationFrequency] = useState('daily');
+  const [notificationFrequency, setNotificationFrequency] = useState<'daily' | 'weekly' | 'none'>('daily');
   const [notificationFrequencyOpen, setNotificationFrequencyOpen] = useState(false);
+  const [expiryNotifications, setExpiryNotifications] = useState(true);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Load settings on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await getNotificationSettings();
+        if (settings) {
+          setExpiryNotifications(settings.expiryNotifications);
+        }
+        
+        // Load stored time and frequency
+        setNotificationTime(getStoredNotificationTime());
+        setNotificationFrequency(getStoredNotificationFrequency());
+      } catch (error) {
+        console.error('Error loading notification settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  const handleNotificationTimeChange = async (newTime: string) => {
+    setNotificationTime(newTime);
+    
+    const success = await updateNotificationSettings({ notificationTime: newTime });
+    if (success) {
+      toast({
+        title: "Notification time updated",
+        description: `Daily notifications will be sent at ${newTime}`,
+        duration: 2000,
+      });
+      
+      // Reschedule notifications with new time
+      if (user) {
+        scheduleNotificationCheck(user.id);
+      }
+    } else {
+      toast({
+        title: "Error updating notification time",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNotificationFrequencyChange = async (newFrequency: 'daily' | 'weekly' | 'none') => {
+    if (!newFrequency) return;
+    
+    setNotificationFrequency(newFrequency);
+    
+    const success = await updateNotificationSettings({ notificationFrequency: newFrequency });
+    if (success) {
+      let description = '';
+      switch (newFrequency) {
+        case 'daily':
+          description = 'You will receive daily notifications about expiring items';
+          break;
+        case 'weekly':
+          description = 'You will receive weekly notifications about expiring items';
+          break;
+        case 'none':
+          description = 'Scheduled notifications disabled (real-time monitoring still active)';
+          break;
+      }
+      
+      toast({
+        title: "Notification frequency updated",
+        description,
+        duration: 3000,
+      });
+      
+      // Reschedule notifications with new frequency
+      if (user) {
+        scheduleNotificationCheck(user.id);
+      }
+    } else {
+      toast({
+        title: "Error updating notification frequency",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExpiryNotificationsChange = async (enabled: boolean) => {
+    setExpiryNotifications(enabled);
+    
+    const success = await updateNotificationSettings({ expiryNotifications: enabled });
+    if (success) {
+      toast({
+        title: enabled ? "Expiry notifications enabled" : "Expiry notifications disabled",
+        duration: 2000,
+      });
+    } else {
+      toast({
+        title: "Error updating expiry notifications",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -76,6 +186,18 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
             />
           </div>
           
+          {/* Expiry Notifications Toggle */}
+          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-2">
+              <Bell size={16} />
+              <span>Expiry Alerts</span>
+            </div>
+            <Switch 
+              checked={expiryNotifications} 
+              onCheckedChange={handleExpiryNotificationsChange}
+            />
+          </div>
+          
           {/* Notification Time */}
           <Collapsible
             open={notificationTimeOpen}
@@ -101,7 +223,7 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
                   id="notification-time"
                   type="time"
                   value={notificationTime}
-                  onChange={(e) => setNotificationTime(e.target.value)}
+                  onChange={(e) => handleNotificationTimeChange(e.target.value)}
                   className="w-full"
                 />
               </div>
@@ -132,7 +254,7 @@ const SidebarSettings: React.FC<SidebarSettingsProps> = ({
                   type="single" 
                   value={notificationFrequency}
                   onValueChange={(value) => {
-                    if (value) setNotificationFrequency(value);
+                    if (value) handleNotificationFrequencyChange(value as 'daily' | 'weekly' | 'none');
                   }}
                   className="w-full grid grid-cols-3 gap-1"
                 >

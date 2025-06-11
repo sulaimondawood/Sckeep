@@ -16,6 +16,7 @@ import FoodItemDetails from "./pages/FoodItemDetails";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import { scheduleNotificationCheck } from "./services/notificationSettingsService";
 
 const queryClient = new QueryClient();
 
@@ -57,14 +58,15 @@ const requestNotificationPermission = () => {
 };
 
 const AppRoutes = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   
   useEffect(() => {
-    // Request notification permission when app loads
-    if (isAuthenticated) {
+    // Request notification permission and schedule checks when user is authenticated
+    if (isAuthenticated && user) {
       requestNotificationPermission();
+      scheduleNotificationCheck(user.id);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   // Show loading only for the initial auth check
   if (isLoading) {
