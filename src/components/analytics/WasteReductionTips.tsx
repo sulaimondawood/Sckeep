@@ -1,100 +1,95 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { Badge } from '@/components/ui/badge';
+import { Lightbulb, Leaf, TrendingUp } from 'lucide-react';
 
-export const WasteReductionTips = () => {
+interface WasteReductionTipsProps {
+  itemsSaved: number;
+  percentageImprovement: number;
+}
+
+const WasteReductionTips: React.FC<WasteReductionTipsProps> = ({ 
+  itemsSaved, 
+  percentageImprovement 
+}) => {
   const tips = [
     {
-      title: "Shop Smart",
-      description: "Plan your meals in advance and make a shopping list to avoid overbuying. Check your inventory before shopping."
+      icon: <Lightbulb className="h-5 w-5" />,
+      title: "Check expiry dates regularly",
+      description: "Review your inventory weekly to prioritize items that are expiring soon."
     },
     {
-      title: "First In, First Out (FIFO)",
-      description: "Store new items behind older ones to ensure older items are used first."
+      icon: <Leaf className="h-5 w-5" />,
+      title: "Use FIFO method",
+      description: "First In, First Out - use older items before newer ones to reduce waste."
     },
     {
-      title: "Proper Storage",
-      description: "Learn the optimal storage conditions for different foods to maximize their shelf life."
-    },
-    {
-      title: "Freeze Extras",
-      description: "Freeze leftovers or excess fresh food before they spoil. Label them with the date to track their storage time."
-    },
-    {
-      title: "Understand Date Labels",
-      description: "'Best by' doesn't mean unsafe after that date. Learn to tell when food is actually spoiled versus just past its prime."
-    },
-    {
-      title: "Creative Leftovers",
-      description: "Transform leftovers into new meals like soups, stir-fries, or casseroles instead of throwing them away."
-    },
-    {
-      title: "Compost Food Scraps",
-      description: "Start composting inedible food scraps to reduce landfill waste and create nutrient-rich soil for plants."
+      icon: <TrendingUp className="h-5 w-5" />,
+      title: "Plan your meals",
+      description: "Create meal plans based on what you have to ensure nothing goes to waste."
     }
   ];
 
-  const insights = [
-    "Most food waste occurs in dairy products",
-    "Weekend shopping leads to more waste",
-    "Items with longer shelf life are less likely to expire",
-    "Improper refrigerator organization increases waste",
-    "Buying in bulk without a plan often leads to spoilage"
-  ];
-
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
-            Waste Reduction Tips
+            <Leaf className="h-5 w-5 text-green-600" />
+            Waste Reduction Impact
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Carousel className="w-full max-w-xs mx-auto">
-            <CarouselContent>
-              {tips.map((tip) => (
-                <CarouselItem key={tip.title}>
-                  <Alert>
-                    <AlertTitle>{tip.title}</AlertTitle>
-                    <AlertDescription>{tip.description}</AlertDescription>
-                  </Alert>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="flex items-center justify-center mt-4 gap-2">
-              <CarouselPrevious className="static transform-none h-8 w-8 opacity-70 hover:opacity-100" />
-              <CarouselNext className="static transform-none h-8 w-8 opacity-70 hover:opacity-100" />
+        <CardContent className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Items Saved</span>
+              <Badge variant="secondary">{itemsSaved}</Badge>
             </div>
-          </Carousel>
+            <p className="text-xs text-muted-foreground mt-1">
+              Items currently in inventory that haven't expired
+            </p>
+          </div>
+          
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Efficiency Rate</span>
+              <Badge variant={percentageImprovement >= 80 ? "default" : "secondary"}>
+                {percentageImprovement}%
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Percentage of items that are still fresh
+            </p>
+          </div>
+
+          {percentageImprovement >= 80 && (
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                🎉 Great job! You're managing your food inventory efficiently!
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Behavior Insights</CardTitle>
+          <CardTitle>Waste Reduction Tips</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {insights.map((insight, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 p-3 border rounded-lg"
-              >
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  {index + 1}
+            {tips.map((tip, index) => (
+              <div key={index} className="flex gap-3">
+                <div className="flex-shrink-0 mt-0.5 text-primary">
+                  {tip.icon}
                 </div>
-                <p className="text-sm">{insight}</p>
+                <div>
+                  <h4 className="text-sm font-medium">{tip.title}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {tip.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -103,3 +98,5 @@ export const WasteReductionTips = () => {
     </div>
   );
 };
+
+export default WasteReductionTips;

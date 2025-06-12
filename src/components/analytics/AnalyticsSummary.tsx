@@ -1,55 +1,97 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
-export const AnalyticsSummary = () => {
-  // Mock data for demonstration
-  const summary = {
-    totalWaste: 45,
-    wasteReduction: 15,
-    topExpiredCategories: ['Dairy', 'Produce', 'Leftovers'],
-    averageShelfLife: 8.5
-  };
+interface AnalyticsSummaryProps {
+  totalItems: number;
+  expiringItems: number;
+  categoryCounts: { [key: string]: number };
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C', '#8DD1E1'];
+
+const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ 
+  totalItems, 
+  expiringItems, 
+  categoryCounts 
+}) => {
+  // Convert categoryCounts to chart data
+  const categoryData = Object.entries(categoryCounts).map(([category, count]) => ({
+    name: category,
+    value: count
+  }));
+
+  const expiryPercentage = totalItems > 0 ? Math.round((expiringItems / totalItems) * 100) : 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Summary Insights</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4">
-          <div className="flex items-center justify-between border rounded-lg p-3">
-            <div>
-              <p className="text-sm font-medium">Total Waste This Month</p>
-              <p className="text-2xl font-bold">{summary.totalWaste} items</p>
-            </div>
-            <div className="flex items-center text-green-500">
-              <ArrowDownIcon className="h-4 w-4 mr-1" />
-              <span className="text-sm font-medium">{summary.wasteReduction}%</span>
-            </div>
-          </div>
-          
-          <div className="border rounded-lg p-3">
-            <p className="text-sm font-medium mb-2">Top Expired Categories</p>
-            <div className="space-y-2">
-              {summary.topExpiredCategories.map((category, index) => (
-                <div key={category} className="flex items-center justify-between">
-                  <span className="text-sm">{category}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {30 - index * 5}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Total Items</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalItems}</div>
+          <p className="text-sm text-muted-foreground">
+            Items in your inventory
+          </p>
+        </CardContent>
+      </Card>
 
-          <div className="border rounded-lg p-3">
-            <p className="text-sm font-medium">Average Shelf Life</p>
-            <p className="text-2xl font-bold">{summary.averageShelfLife} days</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Expiring Soon</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-orange-600">{expiringItems}</div>
+          <p className="text-sm text-muted-foreground">
+            {expiryPercentage}% of total items
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Categories</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{Object.keys(categoryCounts).length}</div>
+          <p className="text-sm text-muted-foreground">
+            Different categories
+          </p>
+        </CardContent>
+      </Card>
+
+      {categoryData.length > 0 && (
+        <Card className="md:col-span-3">
+          <CardHeader>
+            <CardTitle>Items by Category</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
+
+export default AnalyticsSummary;

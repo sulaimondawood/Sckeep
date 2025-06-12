@@ -1,51 +1,71 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ExpiryTrendChart } from '@/components/analytics/ExpiryTrendChart';
-import { AnalyticsSummary } from '@/components/analytics/AnalyticsSummary';
-import { WasteReductionTips } from '@/components/analytics/WasteReductionTips';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChartLine } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { getAnalyticsData, AnalyticsData } from '@/services/analyticsService';
+import AnalyticsSummary from '@/components/analytics/AnalyticsSummary';
+import ExpiryTrendChart from '@/components/analytics/ExpiryTrendChart';
+import WasteReductionTips from '@/components/analytics/WasteReductionTips';
 
-const Analytics = () => {
-  const [timeframe, setTimeframe] = useState<'day' | 'month' | 'year'>('month');
+const Analytics: React.FC = () => {
+  const { user } = useAuth();
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAnalyticsData = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      try {
+        const data = await getAnalyticsData(user.id);
+        setAnalyticsData(data);
+      } catch (error) {
+        console.error('Error loading analytics data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAnalyticsData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!analyticsData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Failed to load analytics data</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ChartLine className="h-6 w-6" />
-            Analytics Dashboard
-          </h1>
-          <p className="text-muted-foreground">
-            Track your food waste patterns and get insights
-          </p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Analytics</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Track your food management patterns and reduce waste
+        </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Expiry Trends</CardTitle>
-              <Tabs value={timeframe} onValueChange={(v) => setTimeframe(v as typeof timeframe)}>
-                <TabsList>
-                  <TabsTrigger value="day">Day</TabsTrigger>
-                  <TabsTrigger value="month">Month</TabsTrigger>
-                  <TabsTrigger value="year">Year</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ExpiryTrendChart timeframe={timeframe} />
-          </CardContent>
-        </Card>
-        <AnalyticsSummary />
-      </div>
+      <AnalyticsSummary 
+        totalItems={analyticsData.totalItems}
+        expiringItems={analyticsData.expiringItems}
+        categoryCounts={analyticsData.categoryCounts}
+      />
 
-      <WasteReductionTips />
+      <ExpiryTrendChart expiryTrend={analyticsData.expiryTrend} />
+
+      <WasteReductionTips 
+        itemsSaved={analyticsData.wasteReduction.itemsSaved}
+        percentageImprovement={analyticsData.wasteReduction.percentageImprovement}
+      />
     </div>
   );
 };
