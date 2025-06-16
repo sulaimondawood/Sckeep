@@ -1,5 +1,4 @@
 
-
 -- Create RLS policies for food_items table (if they don't exist)
 DO $$ 
 BEGIN
@@ -56,7 +55,6 @@ END $$;
 -- Create RLS policies for notifications table (if they don't exist)
 DO $$ 
 BEGIN
-    -- Check and create notifications policies
     IF NOT EXISTS (
         SELECT 1 FROM pg_policies 
         WHERE schemaname = 'public' 
@@ -144,62 +142,16 @@ BEGIN
           FOR UPDATE 
           USING (auth.uid() = user_id);
     END IF;
-END $$;
-
--- Create a storage bucket for food images (if it doesn't exist)
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('food_images', 'food_images', true)
-ON CONFLICT (id) DO NOTHING;
-
--- Create storage policies for the food_images bucket (if they don't exist)
-DO $$ 
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE schemaname = 'storage' 
-        AND tablename = 'objects' 
-        AND policyname = 'Users can upload their own food images'
-    ) THEN
-        CREATE POLICY "Users can upload their own food images" 
-          ON storage.objects 
-          FOR INSERT 
-          WITH CHECK (bucket_id = 'food_images' AND auth.uid()::text = (storage.foldername(name))[1]);
-    END IF;
 
     IF NOT EXISTS (
         SELECT 1 FROM pg_policies 
-        WHERE schemaname = 'storage' 
-        AND tablename = 'objects' 
-        AND policyname = 'Users can view food images'
+        WHERE schemaname = 'public' 
+        AND tablename = 'user_settings' 
+        AND policyname = 'Users can delete their own settings'
     ) THEN
-        CREATE POLICY "Users can view food images" 
-          ON storage.objects 
-          FOR SELECT 
-          USING (bucket_id = 'food_images');
-    END IF;
-
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE schemaname = 'storage' 
-        AND tablename = 'objects' 
-        AND policyname = 'Users can update their own food images'
-    ) THEN
-        CREATE POLICY "Users can update their own food images" 
-          ON storage.objects 
-          FOR UPDATE 
-          USING (bucket_id = 'food_images' AND auth.uid()::text = (storage.foldername(name))[1]);
-    END IF;
-
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE schemaname = 'storage' 
-        AND tablename = 'objects' 
-        AND policyname = 'Users can delete their own food images'
-    ) THEN
-        CREATE POLICY "Users can delete their own food images" 
-          ON storage.objects 
+        CREATE POLICY "Users can delete their own settings" 
+          ON public.user_settings 
           FOR DELETE 
-          USING (bucket_id = 'food_images' AND auth.uid()::text = (storage.foldername(name))[1]);
+          USING (auth.uid() = user_id);
     END IF;
 END $$;
-
