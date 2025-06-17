@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -143,35 +144,58 @@ const Inventory: React.FC = () => {
   };
 
   const handleScanComplete = async (itemData: any) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found for item creation');
+      uiToast({
+        title: "Authentication Error",
+        description: "Please log in to add items.",
+        variant: "destructive"
+      });
+      return;
+    }
 
+    console.log('Received item data from scanner:', itemData);
+
+    // Prepare the data for creation, preserving the addedDate from the form
     const newItemData = {
       name: itemData.name,
       category: itemData.category,
       expiryDate: itemData.expiryDate,
-      addedDate: new Date().toISOString().split('T')[0],
+      addedDate: itemData.addedDate, // Use the date from the form, don't override
       barcode: itemData.barcode,
-      quantity: itemData.quantity,
-      unit: itemData.unit,
+      quantity: itemData.quantity || 1,
+      unit: itemData.unit || 'pcs',
       notes: itemData.notes,
       imageUrl: itemData.imageUrl
     };
     
-    const result = await createFoodItem(newItemData, user.id);
-    if (result) {
-      setFoodItems(prev => [result, ...prev]);
-      setScannerOpen(false);
-      
-      // Check for expiring items after adding new item
-      await checkExpiringItems(user.id);
-      
-      toast.success(`${itemData.name} added to inventory`, {
-        description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
-      });
-    } else {
+    console.log('Processed item data for creation:', newItemData);
+    
+    try {
+      const result = await createFoodItem(newItemData, user.id);
+      if (result) {
+        setFoodItems(prev => [result, ...prev]);
+        setScannerOpen(false);
+        
+        // Check for expiring items after adding new item
+        await checkExpiringItems(user.id);
+        
+        toast.success(`${itemData.name} added to inventory`, {
+          description: `Expires on ${new Date(itemData.expiryDate).toLocaleDateString()}`
+        });
+      } else {
+        console.error('Failed to create food item - no result returned');
+        uiToast({
+          title: "Add Error",
+          description: "Failed to add the item. Please check your connection and try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error in handleScanComplete:', error);
       uiToast({
         title: "Add Error",
-        description: "Failed to add the item.",
+        description: error instanceof Error ? error.message : "Failed to add the item.",
         variant: "destructive"
       });
     }

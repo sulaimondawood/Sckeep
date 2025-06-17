@@ -31,13 +31,12 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
       description: `Barcode: ${data}`
     });
 
-    // In a real application, you would call a product lookup API here
-    // For now, we'll prompt the user to enter details manually with the barcode pre-filled
+    // Expanded mock product database with more common barcodes
     try {
-      // Attempt to lookup product information using the barcode
       const productInfo = await lookupProductByBarcode(data);
       
       if (productInfo) {
+        console.log('Product found:', productInfo);
         // If product found, use the retrieved information
         onScanComplete({
           barcode: data,
@@ -46,10 +45,12 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
           quantity: 1,
           unit: productInfo.unit || "pcs",
           expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 2 weeks
+          addedDate: new Date().toISOString().split('T')[0],
           notes: `Scanned barcode: ${data}`
         });
       } else {
         // Product not found, switch to manual entry with barcode pre-filled
+        console.log('Product not found for barcode:', data);
         uiToast({
           title: "Product not found",
           description: "Please enter the product details manually. The barcode has been saved.",
@@ -66,28 +67,45 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
     }
   };
 
-  // Mock product lookup function - replace with real API call
+  // Enhanced mock product lookup function with more products
   const lookupProductByBarcode = async (barcode: string): Promise<any | null> => {
     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Mock database of some common products (in a real app, this would be an API call)
+    // Expanded mock database of common products
     const mockProducts: { [key: string]: any } = {
       // Common test barcodes
-      "123456789012": { name: "Test Product", category: "Food", unit: "pcs" },
+      "123456789012": { name: "Test Product", category: "Pantry", unit: "pcs" },
       "072250007164": { name: "Coca-Cola", category: "Beverages", unit: "bottles" },
-      "038000356308": { name: "Kellogg's Corn Flakes", category: "Breakfast", unit: "boxes" },
+      "038000356308": { name: "Kellogg's Corn Flakes", category: "Pantry", unit: "boxes" },
       "041220576302": { name: "Pepsi Cola", category: "Beverages", unit: "cans" },
-      // Add more real barcodes as needed
+      "028400064057": { name: "Lay's Classic Chips", category: "Snacks", unit: "bags" },
+      "021000613922": { name: "Wonder Bread", category: "Bakery", unit: "loaves" },
+      "011110871718": { name: "Milk Gallon", category: "Dairy & Eggs", unit: "gallons" },
+      "072036720467": { name: "Banana Bunch", category: "Fruits & Vegetables", unit: "bunches" },
+      "688267141676": { name: "Oreo Cookies", category: "Snacks", unit: "packages" },
+      "030000056704": { name: "Cheerios Cereal", category: "Pantry", unit: "boxes" },
+      // Generic patterns for common barcode formats
+      "4901234567890": { name: "Generic Japanese Product", category: "Other", unit: "pcs" },
+      "1234567890123": { name: "Generic UPC Product", category: "Other", unit: "pcs" },
+      "9780123456789": { name: "Generic ISBN Product", category: "Other", unit: "pcs" },
     };
     
-    // In a real application, you might use services like:
-    // - OpenFoodFacts API
-    // - UPC Database API
-    // - Barcode Lookup API
-    // For example: https://world.openfoodfacts.org/api/v0/product/${barcode}.json
+    // Check for exact match first
+    if (mockProducts[barcode]) {
+      return mockProducts[barcode];
+    }
     
-    return mockProducts[barcode] || null;
+    // For demonstration, let's also accept any 12-13 digit barcode as a generic product
+    if (/^\d{12,13}$/.test(barcode)) {
+      return {
+        name: "Unknown Product",
+        category: "Other",
+        unit: "pcs"
+      };
+    }
+    
+    return null;
   };
 
   const handleStartScanning = () => {
@@ -96,7 +114,14 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
   };
 
   const handleManualSubmit = (formData: any) => {
-    onScanComplete(formData);
+    console.log('Manual form data submitted:', formData);
+    // Ensure addedDate is preserved from the form
+    const completeFormData = {
+      ...formData,
+      addedDate: formData.addedDate || new Date().toISOString().split('T')[0]
+    };
+    console.log('Complete form data being sent:', completeFormData);
+    onScanComplete(completeFormData);
   };
 
   return (

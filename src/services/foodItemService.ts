@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { FoodItem } from '@/types/food';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,6 +45,7 @@ const mapToSupabase = (item: FoodItem, userId: string) => ({
 // Get all food items for a specific user
 export const getAllFoodItems = async (userId: string): Promise<FoodItem[]> => {
   try {
+    console.log('Fetching food items for user:', userId);
     const { data, error } = await supabase
       .from('food_items')
       .select('*')
@@ -51,9 +53,11 @@ export const getAllFoodItems = async (userId: string): Promise<FoodItem[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('Supabase error fetching food items:', error);
       throw error;
     }
 
+    console.log('Successfully fetched food items:', data?.length || 0);
     return data.map(mapFromSupabase);
   } catch (error) {
     console.error('Error getting food items:', error);
@@ -84,18 +88,38 @@ export const getFoodItemById = async (id: string): Promise<FoodItem | null> => {
 // Create a new food item
 export const createFoodItem = async (item: Omit<FoodItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, userId: string): Promise<FoodItem | null> => {
   try {
+    console.log('Creating food item for user:', userId);
+    console.log('Item data to create:', item);
+
+    // Validate required fields
+    if (!item.name || !item.category || !item.expiryDate || !item.addedDate) {
+      const missingFields = [];
+      if (!item.name) missingFields.push('name');
+      if (!item.category) missingFields.push('category');
+      if (!item.expiryDate) missingFields.push('expiryDate');
+      if (!item.addedDate) missingFields.push('addedDate');
+      
+      console.error('Missing required fields:', missingFields);
+      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+    }
+
     const newItem = {
       id: uuidv4(),
-      ...item,
-      user_id: userId,
-      created_at: new Date().toISOString(),
-      updated_at: null,
+      name: item.name,
+      category: item.category,
       expiry_date: item.expiryDate,
       added_date: item.addedDate,
-      image_url: item.imageUrl || null,
+      quantity: item.quantity || 1,
+      unit: item.unit || 'pcs',
       barcode: item.barcode || null,
-      notes: item.notes || null
+      notes: item.notes || null,
+      image_url: item.imageUrl || null,
+      user_id: userId,
+      created_at: new Date().toISOString(),
+      updated_at: null
     };
+
+    console.log('Prepared item for insertion:', newItem);
 
     const { data, error } = await supabase
       .from('food_items')
@@ -104,19 +128,42 @@ export const createFoodItem = async (item: Omit<FoodItem, 'id' | 'userId' | 'cre
       .single();
 
     if (error) {
-      throw error;
+      console.error('Supabase error creating food item:', error);
+      
+      // Provide more specific error messages
+      if (error.code === 'PGRST116') {
+        throw new Error('Unable to save item. Please check your internet connection and try again.');
+      } else if (error.message?.includes('violates row-level security')) {
+        throw new Error('Authentication issue. Please log out and log back in.');
+      } else {
+        throw new Error(`Failed to save item: ${error.message}`);
+      }
     }
 
+    if (!data) {
+      console.error('No data returned from insert operation');
+      throw new Error('Failed to save item - no data returned');
+    }
+
+    console.log('Successfully created food item:', data);
     return mapFromSupabase(data);
   } catch (error) {
     console.error('Error creating food item:', error);
-    return null;
+    
+    // Re-throw with better context
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      throw new Error('Unknown error occurred while creating food item');
+    }
   }
 };
 
 // Update an existing food item
 export const updateFoodItem = async (item: FoodItem, userId: string): Promise<FoodItem | null> => {
   try {
+    console.log('Updating food item:', item.id);
+    
     const { data, error } = await supabase
       .from('food_items')
       .update(mapToSupabase(item, userId))
@@ -125,9 +172,11 @@ export const updateFoodItem = async (item: FoodItem, userId: string): Promise<Fo
       .single();
 
     if (error) {
+      console.error('Supabase error updating food item:', error);
       throw error;
     }
 
+    console.log('Successfully updated food item:', data);
     return mapFromSupabase(data);
   } catch (error) {
     console.error(`Error updating food item with ID ${item.id}:`, error);
@@ -138,6 +187,8 @@ export const updateFoodItem = async (item: FoodItem, userId: string): Promise<Fo
 // Delete a food item
 export const deleteFoodItem = async (id: string, userId: string): Promise<boolean> => {
   try {
+    console.log('Deleting food item:', id);
+    
     const { error } = await supabase
       .from('food_items')
       .delete()
@@ -145,9 +196,11 @@ export const deleteFoodItem = async (id: string, userId: string): Promise<boolea
       .eq('user_id', userId);
 
     if (error) {
+      console.error('Supabase error deleting food item:', error);
       throw error;
     }
 
+    console.log('Successfully deleted food item:', id);
     return true;
   } catch (error) {
     console.error(`Error deleting food item with ID ${id}:`, error);
