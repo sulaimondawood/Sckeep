@@ -8,90 +8,127 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Pencil, Trash } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate, getExpiryStatus, getStatusColor } from '@/utils/expiryUtils';
-import { mockFoodItems } from '@/data/mockData';
 import EditFoodItemDialog from '@/components/food/EditFoodItemDialog';
+import { getFoodItemById, updateFoodItem, deleteFoodItem } from '@/services/foodItemService';
+import { useAuth } from '@/context/AuthContext';
 
 const FoodItemDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const [item, setItem] = useState<FoodItem | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // In a real app, this would be an API call
-    // For now, we're using the mock data
-    const savedItems = localStorage.getItem('foodItems');
-    const items: FoodItem[] = savedItems ? JSON.parse(savedItems) : mockFoodItems;
-    const foundItem = items.find(item => item.id === id);
-    
-    if (foundItem) {
-      setItem(foundItem);
-    } else {
-      toast({
-        title: "Item not found",
-        description: "The requested food item could not be found.",
-        variant: "destructive",
-      });
-      navigate('/inventory');
-    }
-  }, [id, navigate, toast]);
+    const loadItem = async () => {
+      if (!isAuthenticated || !user || !id) {
+        navigate('/inventory');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const foundItem = await getFoodItemById(id);
+        
+        if (foundItem && foundItem.userId === user.id) {
+          setItem(foundItem);
+        } else {
+          toast({
+            title: "Item not found",
+            description: "The requested food item could not be found.",
+            variant: "destructive",
+          });
+          navigate('/inventory');
+        }
+      } catch (error) {
+        console.error('Error loading food item:', error);
+        toast({
+          title: "Error loading item",
+          description: "Could not load the food item details.",
+          variant: "destructive",
+        });
+        navigate('/inventory');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadItem();
+  }, [id, navigate, toast, isAuthenticated, user]);
 
   const handleEdit = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = () => {
-    if (item) {
-      // In a real app, this would be an API call
-      const savedItems = localStorage.getItem('foodItems');
-      const items: FoodItem[] = savedItems ? JSON.parse(savedItems) : mockFoodItems;
-      const updatedItems = items.filter(i => i.id !== item.id);
-      
-      // Add to deleted items
-      const savedDeletedItems = localStorage.getItem('deletedItems');
-      const deletedItems: FoodItem[] = savedDeletedItems ? JSON.parse(savedDeletedItems) : [];
-      deletedItems.push(item);
-      
-      localStorage.setItem('foodItems', JSON.stringify(updatedItems));
-      localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
-      
-      toast({
-        title: "Item Removed",
-        description: "Food item has been moved to recently deleted items.",
-      });
-      
-      navigate('/inventory');
+  const handleDelete = async () => {
+    if (item && user) {
+      const success = await deleteFoodItem(item.id, user.id);
+      if (success) {
+        toast({
+          title: "Item Deleted",
+          description: "Food item has been removed from your inventory.",
+        });
+        navigate('/inventory');
+      } else {
+        toast({
+          title: "Delete Error",
+          description: "Failed to delete the item.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
-  const handleSaveEdit = (updatedItem: FoodItem) => {
-    // In a real app, this would be an API call
-    const savedItems = localStorage.getItem('foodItems');
-    const items: FoodItem[] = savedItems ? JSON.parse(savedItems) : mockFoodItems;
-    
-    const updatedItems = items.map(i => 
-      i.id === updatedItem.id ? updatedItem : i
-    );
-    
-    localStorage.setItem('foodItems', JSON.stringify(updatedItems));
-    
-    // Update current item state
-    setItem(updatedItem);
-    
-    // Close dialog
-    setIsEditDialogOpen(false);
-    
-    toast({
-      title: "Item Updated",
-      description: "Food item has been successfully updated.",
-    });
+  const handleSaveEdit = async (updatedItem: FoodItem) => {
+    if (!user) return;
+
+    const result = await updateFoodItem(updatedItem, user.id);
+    if (result) {
+      setItem(result);
+      setIsEditDialogOpen(false);
+      
+      toast({
+        title: "Item Updated",
+        description: "Food item has been successfully updated.",
+      });
+    } else {
+      toast({
+        title: "Update Error",
+        description: "Failed to update the item.",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view item details.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    );
+  }
 
   if (!item) {
     return (
       <div className="flex justify-center items-center h-96">
-        <div className="animate-pulse">Loading...</div>
+        <div className="text-center">
+          <p className="text-muted-foreground">Item not found.</p>
+          <Button onClick={() => navigate('/inventory')} className="mt-4">
+            Back to Inventory
+          </Button>
+        </div>
       </div>
     );
   }
