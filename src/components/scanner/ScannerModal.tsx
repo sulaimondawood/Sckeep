@@ -20,6 +20,7 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
   const [activeTab, setActiveTab] = useState<string>("camera");
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [fetchedProductData, setFetchedProductData] = useState<any>(null);
   const { toast: uiToast } = useToast();
 
   const handleScan = async (data: string) => {
@@ -36,20 +37,24 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
       
       if (productInfo) {
         console.log('Product found:', productInfo);
-        // Calculate expiry date based on product type
-        const expiryDate = calculateExpiryDate(productInfo.category, productInfo.shelfLifeDays);
         
-        onScanComplete({
+        // Store the fetched product data and switch to manual entry for expiry date
+        setFetchedProductData({
           barcode: data,
           name: productInfo.name,
           category: productInfo.category || "Other",
           quantity: 1,
           unit: productInfo.unit || "pcs",
-          expiryDate: expiryDate,
-          addedDate: new Date().toISOString().split('T')[0],
           notes: `Scanned barcode: ${data}`,
           imageUrl: productInfo.imageUrl
         });
+        
+        uiToast({
+          title: "Product found!",
+          description: "Please enter the expiry date for this product.",
+        });
+        
+        setActiveTab("manual");
       } else {
         // Product not found, switch to manual entry with barcode pre-filled
         console.log('Product not found for barcode:', data);
@@ -67,37 +72,6 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
       });
       setActiveTab("manual");
     }
-  };
-
-  // Calculate realistic expiry date based on product category and shelf life
-  const calculateExpiryDate = (category: string, shelfLifeDays?: number): string => {
-    const today = new Date();
-    let daysToAdd = shelfLifeDays || getDefaultShelfLife(category);
-    
-    const expiryDate = new Date(today);
-    expiryDate.setDate(today.getDate() + daysToAdd);
-    
-    return expiryDate.toISOString().split('T')[0];
-  };
-
-  // Get default shelf life based on category
-  const getDefaultShelfLife = (category: string): number => {
-    const shelfLifeMap: { [key: string]: number } = {
-      'Dairy': 7,        // 1 week
-      'Meat': 3,         // 3 days
-      'Seafood': 2,      // 2 days
-      'Fruits': 5,       // 5 days
-      'Vegetables': 7,   // 1 week
-      'Bakery': 3,       // 3 days
-      'Beverages': 365,  // 1 year
-      'Snacks': 90,      // 3 months
-      'Pantry': 365,     // 1 year
-      'Frozen': 90,      // 3 months
-      'Canned': 730,     // 2 years
-      'Other': 30        // 1 month default
-    };
-    
-    return shelfLifeMap[category] || 30;
   };
 
   // Map Open Food Facts categories to our categories
@@ -199,8 +173,7 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
         name: fullName,
         category: mappedCategory,
         imageUrl: imageUrl,
-        unit: unit,
-        shelfLifeDays: getDefaultShelfLife(mappedCategory)
+        unit: unit
       };
       
     } catch (error) {
@@ -212,6 +185,7 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
   const handleStartScanning = () => {
     setIsScanning(true);
     setScannedData(null);
+    setFetchedProductData(null);
   };
 
   const handleManualSubmit = (formData: any) => {
@@ -222,6 +196,14 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
     };
     console.log('Complete form data being sent:', completeFormData);
     onScanComplete(completeFormData);
+  };
+
+  // Determine initial data for manual form
+  const getInitialFormData = () => {
+    if (fetchedProductData) {
+      return fetchedProductData;
+    }
+    return { barcode: scannedData || undefined };
   };
 
   return (
@@ -279,14 +261,36 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
                 <p>• Hold your phone steady about 6-8 inches away</p>
                 <p>• Try different angles if scanning fails</p>
                 <p>• The system will fetch real product data including images and names</p>
+                <p>• You'll be prompted to enter the expiry date manually</p>
               </div>
             </div>
           </TabsContent>
           
           <TabsContent value="manual" className="py-2">
             <ScrollArea className="h-[60vh]">
+              {fetchedProductData && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {fetchedProductData.imageUrl && (
+                      <img 
+                        src={fetchedProductData.imageUrl} 
+                        alt={fetchedProductData.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-green-800">
+                        Product found: {fetchedProductData.name}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        Please enter the expiry date below
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <ManualEntryForm 
-                initialData={{barcode: scannedData || undefined}} 
+                initialData={getInitialFormData()} 
                 onSubmit={handleManualSubmit} 
               />
             </ScrollArea>
