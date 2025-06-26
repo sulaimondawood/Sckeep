@@ -112,6 +112,19 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
     return 'Other';
   };
 
+  // Helper function to validate and process image URL
+  const processImageUrl = (imageUrl: string | null | undefined): string | null => {
+    if (!imageUrl) return null;
+    
+    // Convert HTTP to HTTPS for better compatibility
+    if (imageUrl.startsWith('http://')) {
+      imageUrl = imageUrl.replace('http://', 'https://');
+    }
+    
+    console.log('Processing image URL:', imageUrl);
+    return imageUrl;
+  };
+
   // Fetch product data from Open Food Facts API
   const lookupProductByBarcode = async (barcode: string): Promise<any | null> => {
     try {
@@ -139,13 +152,17 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
       const brandName = product.brands ? product.brands.split(',')[0].trim() : '';
       const fullName = brandName ? `${brandName} ${productName}` : productName;
       
-      // Get product image (prioritize front image)
-      let imageUrl = null;
+      // Get product image with better URL handling
+      let rawImageUrl = null;
       if (product.image_front_url) {
-        imageUrl = product.image_front_url;
+        rawImageUrl = product.image_front_url;
       } else if (product.image_url) {
-        imageUrl = product.image_url;
+        rawImageUrl = product.image_url;
       }
+      
+      const processedImageUrl = processImageUrl(rawImageUrl);
+      console.log('Raw image URL:', rawImageUrl);
+      console.log('Processed image URL:', processedImageUrl);
       
       // Map categories
       const categories = product.categories || '';
@@ -162,19 +179,16 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
         }
       }
       
-      console.log('Processed product data:', {
+      const productData = {
         name: fullName,
         category: mappedCategory,
-        imageUrl,
-        unit
-      });
-      
-      return {
-        name: fullName,
-        category: mappedCategory,
-        imageUrl: imageUrl,
+        imageUrl: processedImageUrl,
         unit: unit
       };
+      
+      console.log('Final processed product data:', productData);
+      
+      return productData;
       
     } catch (error) {
       console.error('Error fetching from Open Food Facts API:', error);
@@ -194,13 +208,14 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
       ...formData,
       addedDate: formData.addedDate || new Date().toISOString().split('T')[0]
     };
-    console.log('Complete form data being sent:', completeFormData);
+    console.log('Complete form data being sent (including imageUrl):', completeFormData);
     onScanComplete(completeFormData);
   };
 
   // Determine initial data for manual form
   const getInitialFormData = () => {
     if (fetchedProductData) {
+      console.log('Using fetched product data with imageUrl:', fetchedProductData.imageUrl);
       return fetchedProductData;
     }
     return { barcode: scannedData || undefined };
@@ -276,6 +291,13 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ open, onClose, onScanComple
                         src={fetchedProductData.imageUrl} 
                         alt={fetchedProductData.name}
                         className="w-12 h-12 object-cover rounded"
+                        onError={(e) => {
+                          console.error('Image failed to load:', fetchedProductData.imageUrl);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', fetchedProductData.imageUrl);
+                        }}
                       />
                     )}
                     <div>

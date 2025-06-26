@@ -31,6 +31,11 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) =
     }
   };
 
+  // Debug image URL
+  if (item.imageUrl) {
+    console.log(`Item "${item.name}" has imageUrl:`, item.imageUrl);
+  }
+
   return (
     <Card 
       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
@@ -83,13 +88,24 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) =
           </div>
         </div>
         
-        {/* Image if available */}
+        {/* Image if available with improved error handling */}
         {item.imageUrl && (
           <div className="mt-3 h-32 rounded-md overflow-hidden bg-gray-50 dark:bg-gray-800">
             <img 
               src={item.imageUrl} 
               alt={item.name}
               className="w-full h-full object-contain" 
+              onError={(e) => {
+                console.error(`Failed to load image for item "${item.name}":`, item.imageUrl);
+                // Hide the image container if image fails to load
+                const container = e.currentTarget.parentElement;
+                if (container) {
+                  container.style.display = 'none';
+                }
+              }}
+              onLoad={() => {
+                console.log(`Image loaded successfully for item "${item.name}":`, item.imageUrl);
+              }}
             />
           </div>
         )}
