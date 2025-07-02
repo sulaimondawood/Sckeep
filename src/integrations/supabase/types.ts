@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      carbon_footprint_data: {
+        Row: {
+          carbon_per_kg: number
+          category: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          carbon_per_kg: number
+          category: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          carbon_per_kg?: number
+          category?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       food_items: {
         Row: {
           added_date: string
@@ -127,6 +148,110 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      waste_goals: {
+        Row: {
+          created_at: string
+          current_value: number | null
+          end_date: string | null
+          goal_type: string
+          id: string
+          is_active: boolean
+          start_date: string
+          target_period: string
+          target_value: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number | null
+          end_date?: string | null
+          goal_type: string
+          id?: string
+          is_active?: boolean
+          start_date?: string
+          target_period?: string
+          target_value: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number | null
+          end_date?: string | null
+          goal_type?: string
+          id?: string
+          is_active?: boolean
+          start_date?: string
+          target_period?: string
+          target_value?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      waste_log: {
+        Row: {
+          carbon_footprint_kg: number | null
+          category: string
+          created_at: string
+          disposal_date: string
+          disposal_type: string
+          estimated_cost: number | null
+          expiry_date: string
+          food_item_id: string | null
+          id: string
+          item_name: string
+          quantity: number
+          reason: string | null
+          unit: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          carbon_footprint_kg?: number | null
+          category: string
+          created_at?: string
+          disposal_date?: string
+          disposal_type: string
+          estimated_cost?: number | null
+          expiry_date: string
+          food_item_id?: string | null
+          id?: string
+          item_name: string
+          quantity: number
+          reason?: string | null
+          unit: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          carbon_footprint_kg?: number | null
+          category?: string
+          created_at?: string
+          disposal_date?: string
+          disposal_type?: string
+          estimated_cost?: number | null
+          expiry_date?: string
+          food_item_id?: string | null
+          id?: string
+          item_name?: string
+          quantity?: number
+          reason?: string | null
+          unit?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waste_log_food_item_id_fkey"
+            columns: ["food_item_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

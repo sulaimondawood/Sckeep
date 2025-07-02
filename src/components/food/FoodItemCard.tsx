@@ -3,23 +3,25 @@ import { FoodItem } from "@/types/food";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, getExpiryStatus, getStatusColor } from "@/utils/expiryUtils";
-import { Trash, Pencil, MoreVertical } from 'lucide-react';
+import { Trash, Pencil, MoreVertical, CheckCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 
 interface FoodItemCardProps {
   item: FoodItem;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onTrackWaste?: (id: string) => void;
 }
 
-const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) => {
+const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete, onTrackWaste }) => {
   const navigate = useNavigate();
   const status = getExpiryStatus(item.expiryDate);
   const statusColor = getStatusColor(status);
@@ -62,6 +64,21 @@ const FoodItemCard: React.FC<FoodItemCardProps> = ({ item, onEdit, onDelete }) =
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="dropdown-action">
+                  {onTrackWaste && (
+                    <>
+                      <DropdownMenuItem
+                        className="dropdown-action"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTrackWaste(item.id);
+                        }} 
+                      >
+                        <CheckCircle size={16} className="mr-2 dropdown-action" />
+                        Track Usage
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem
                     className="dropdown-action"
                     onClick={(e) => {
