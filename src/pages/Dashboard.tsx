@@ -24,6 +24,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import ScannerModal from '@/components/scanner/ScannerModal';
 import EditFoodItemDialog from '@/components/food/EditFoodItemDialog';
+import WasteTrackingDialog from '@/components/waste/WasteTrackingDialog';
 import { 
   getAllFoodItems, 
   createFoodItem, 
@@ -40,6 +41,8 @@ const Dashboard: React.FC = () => {
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [wasteTrackingOpen, setWasteTrackingOpen] = useState(false);
+  const [wasteTrackingItem, setWasteTrackingItem] = useState<FoodItem | null>(null);
   const { toast: uiToast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
@@ -155,6 +158,31 @@ const Dashboard: React.FC = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleTrackWaste = (id: string) => {
+    const item = foodItems.find(item => item.id === id);
+    if (item) {
+      setWasteTrackingItem(item);
+      setWasteTrackingOpen(true);
+    }
+  };
+
+  const handleWasteTrackingSuccess = async () => {
+    if (!user || !wasteTrackingItem) return;
+    
+    // Remove the item from the list since it's been disposed
+    setFoodItems(prev => prev.filter(item => item.id !== wasteTrackingItem.id));
+    
+    // Delete the item from the database
+    await deleteFoodItem(wasteTrackingItem.id, user.id);
+    
+    // Reset waste tracking state
+    setWasteTrackingItem(null);
+    setWasteTrackingOpen(false);
+    
+    // Check for expiring items after tracking
+    await checkExpiringItems(user.id);
   };
 
   const handleAddNewItem = () => {
@@ -429,6 +457,7 @@ const Dashboard: React.FC = () => {
                   item={item}
                   onEdit={handleEditItem}
                   onDelete={handleDeleteItem}
+                  onTrackWaste={handleTrackWaste}
                 />
               ))}
             </div>
@@ -451,6 +480,7 @@ const Dashboard: React.FC = () => {
                 item={item}
                 onEdit={handleEditItem}
                 onDelete={handleDeleteItem}
+                onTrackWaste={handleTrackWaste}
               />
             ))}
           </div>
@@ -464,6 +494,7 @@ const Dashboard: React.FC = () => {
                 item={item}
                 onEdit={handleEditItem}
                 onDelete={handleDeleteItem}
+                onTrackWaste={handleTrackWaste}
               />
             ))}
           </div>
@@ -477,6 +508,7 @@ const Dashboard: React.FC = () => {
                 item={item}
                 onEdit={handleEditItem}
                 onDelete={handleDeleteItem}
+                onTrackWaste={handleTrackWaste}
               />
             ))}
           </div>
@@ -499,6 +531,17 @@ const Dashboard: React.FC = () => {
         }}
         item={editingItem}
         onSave={handleSaveEdit}
+      />
+
+      {/* Waste Tracking Dialog */}
+      <WasteTrackingDialog
+        isOpen={wasteTrackingOpen}
+        onClose={() => {
+          setWasteTrackingOpen(false);
+          setWasteTrackingItem(null);
+        }}
+        item={wasteTrackingItem}
+        onSuccess={handleWasteTrackingSuccess}
       />
     </div>
   );

@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { FoodItem } from '@/types/food';
 import ScannerModal from '@/components/scanner/ScannerModal';
 import EditFoodItemDialog from '@/components/food/EditFoodItemDialog';
+import WasteTrackingDialog from '@/components/waste/WasteTrackingDialog';
 import { 
   getAllFoodItems, 
   createFoodItem, 
@@ -34,6 +35,8 @@ const Inventory: React.FC = () => {
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [wasteTrackingOpen, setWasteTrackingOpen] = useState(false);
+  const [wasteTrackingItem, setWasteTrackingItem] = useState<FoodItem | null>(null);
   const { toast: uiToast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
@@ -137,6 +140,31 @@ const Inventory: React.FC = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleTrackWaste = (id: string) => {
+    const item = foodItems.find(item => item.id === id);
+    if (item) {
+      setWasteTrackingItem(item);
+      setWasteTrackingOpen(true);
+    }
+  };
+
+  const handleWasteTrackingSuccess = async () => {
+    if (!user || !wasteTrackingItem) return;
+    
+    // Remove the item from the list since it's been disposed
+    setFoodItems(prev => prev.filter(item => item.id !== wasteTrackingItem.id));
+    
+    // Delete the item from the database
+    await deleteFoodItem(wasteTrackingItem.id, user.id);
+    
+    // Reset waste tracking state
+    setWasteTrackingItem(null);
+    setWasteTrackingOpen(false);
+    
+    // Check for expiring items after tracking
+    await checkExpiringItems(user.id);
   };
 
   const handleAddNewItem = () => {
@@ -277,6 +305,7 @@ const Inventory: React.FC = () => {
               item={item}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
+              onTrackWaste={handleTrackWaste}
             />
           ))}
         </div>
@@ -314,6 +343,17 @@ const Inventory: React.FC = () => {
           onSave={handleSaveEdit}
         />
       )}
+
+      {/* Waste Tracking Dialog */}
+      <WasteTrackingDialog
+        isOpen={wasteTrackingOpen}
+        onClose={() => {
+          setWasteTrackingOpen(false);
+          setWasteTrackingItem(null);
+        }}
+        item={wasteTrackingItem}
+        onSuccess={handleWasteTrackingSuccess}
+      />
     </div>
   );
 };

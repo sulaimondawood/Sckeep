@@ -5,6 +5,7 @@ import { getAnalyticsData, AnalyticsData } from '@/services/analyticsService';
 import AnalyticsSummary from '@/components/analytics/AnalyticsSummary';
 import ExpiryTrendChart from '@/components/analytics/ExpiryTrendChart';
 import WasteReductionTips from '@/components/analytics/WasteReductionTips';
+import WasteAnalyticsDashboard from '@/components/waste/WasteAnalyticsDashboard';
 
 const Analytics: React.FC = () => {
   const { user } = useAuth();
@@ -54,18 +55,29 @@ const Analytics: React.FC = () => {
         </p>
       </div>
 
-      <AnalyticsSummary 
-        totalItems={analyticsData.totalItems}
-        expiringItems={analyticsData.expiringItems}
-        categoryCounts={analyticsData.categoryCounts}
-      />
+      {/* Food Management Analytics */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold">Food Management</h2>
+        
+        <AnalyticsSummary 
+          totalItems={analyticsData.totalItems}
+          expiringItems={analyticsData.expiringItems}
+          categoryCounts={analyticsData.categoryCounts}
+        />
 
-      <ExpiryTrendChart expiryTrend={analyticsData.expiryTrend} />
+        <ExpiryTrendChart expiryTrend={analyticsData.expiryTrend} />
 
-      <WasteReductionTips 
-        itemsSaved={analyticsData.wasteReduction.itemsSaved}
-        percentageImprovement={analyticsData.wasteReduction.percentageImprovement}
-      />
+        <WasteReductionTips 
+          itemsSaved={analyticsData.wasteReduction.itemsSaved}
+          percentageImprovement={analyticsData.wasteReduction.percentageImprovement}
+        />
+      </div>
+
+      {/* Waste Tracking Analytics */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold">Waste Tracking</h2>
+        <WasteAnalyticsDashboard />
+      </div>
     </div>
   );
 };
