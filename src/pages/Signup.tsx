@@ -1,49 +1,56 @@
-
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
-import { useTheme } from '@/hooks/use-theme';
-import { useAuth } from '@/context/AuthContext';
-import lightLogo from '../assets/light-logo.png';
-import darkLogo from '../assets/dark-logo.png';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/context/AuthContext";
+import lightLogo from "../assets/light-logo.png";
+import darkLogo from "../assets/dark-logo.png";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Signup = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { register, isLoading } = useAuth();
   const { isDarkMode } = useTheme();
 
-  const logoSrc = isDarkMode ? darkLogo : lightLogo;
+  const logoSrc = isDarkMode ? lightLogo : darkLogo;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (!email || !password || !name) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError("Password must be at least 6 characters long");
       return;
     }
 
     try {
       const success = await register({ email, password }, name);
       if (!success) {
-        setError('Registration failed. Please try again.');
+        setError("Registration failed. Please try again.");
       }
     } catch (error: any) {
-      setError(error.message || 'Registration failed. Please try again.');
+      setError(error?.message || "Registration failed. Please try again.");
     }
   };
 
@@ -54,13 +61,17 @@ const Signup = () => {
           <span className="inline-flex items-center">
             <img src={logoSrc} alt="Sckeep" className="h-21" />
           </span>
-          <p className="text-sm text-muted-foreground mx-auto">Create your account to get started</p>
+          <p className="text-sm text-muted-foreground mx-auto">
+            Create your account to get started
+          </p>
         </div>
 
         <Card className="w-full mx-auto shadow-md">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Sign Up</CardTitle>
-            <CardDescription>Enter your details to create an account</CardDescription>
+            <CardDescription>
+              Enter your details to create an account
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {error && (
@@ -121,7 +132,11 @@ const Signup = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoading}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -130,14 +145,17 @@ const Signup = () => {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating account...' : 'Create account'}
+                {isLoading ? "Creating account..." : "Create account"}
               </Button>
             </form>
           </CardContent>
           <CardFooter>
             <div className="text-center w-full text-xs">
               Already have an account?{" "}
-              <Link to="/login" className="font-medium text-primary hover:underline">
+              <Link
+                to="/login"
+                className="font-medium text-primary hover:underline"
+              >
                 Sign in
               </Link>
             </div>
