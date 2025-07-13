@@ -54,7 +54,7 @@ const Login = () => {
 
         <Card className="w-full mx-auto shadow-md">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Login</CardTitle>
+            <CardTitle className="text-lg">Sign In</CardTitle>
             <CardDescription>Enter your credentials to sign in</CardDescription>
           </CardHeader>
           <CardContent>

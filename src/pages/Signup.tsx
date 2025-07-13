@@ -20,23 +20,23 @@ const Signup = () => {
   const [error, setError] = useState<string | null>(null);
   const { register, isLoading } = useAuth();
   const { isDarkMode } = useTheme();
-  
+
   const logoSrc = isDarkMode ? darkLogo : lightLogo;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!email || !password || !name) {
       setError('Please fill in all fields');
       return;
     }
-    
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
     }
-    
+
     try {
       const success = await register({ email, password }, name);
       if (!success) {
@@ -51,17 +51,9 @@ const Signup = () => {
     <div className="flex flex-col min-h-screen items-center justify-center bg-slate-50 dark:bg-gray-900 p-4">
       <div className="w-full max-w-sm space-y-4">
         <div className="text-center">
-<<<<<<< HEAD
           <span className="inline-flex items-center">
-              <img src={logoSrc} alt="Sckeep" className="h-21" />
+            <img src={logoSrc} alt="Sckeep" className="h-21" />
           </span>
-=======
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2 mx-auto">
-            Join <span className="inline-flex items-center">
-              <img src={logoSrc} alt="Sckeep" className="h-6 md:h-8 ml-1" />
-            </span>
-          </h1>
->>>>>>> 66ede28e879a4b376c88d4ccea517bf8f5f59342
           <p className="text-sm text-muted-foreground mx-auto">Create your account to get started</p>
         </div>
 
@@ -76,14 +68,14 @@ const Signup = () => {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <form onSubmit={handleSignup} className="space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="name" 
+                  <Input
+                    id="name"
                     type="text"
                     placeholder="Your full name"
                     className="pl-10"
@@ -98,8 +90,8 @@ const Signup = () => {
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="email" 
+                  <Input
+                    id="email"
                     type="email"
                     placeholder="name@example.com"
                     className="pl-10"
@@ -109,13 +101,13 @@ const Signup = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-1">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="password" 
+                  <Input
+                    id="password"
                     type={showPassword ? "text" : "password"}
                     className="pl-10 pr-10"
                     placeholder="Choose a strong password"
@@ -136,7 +128,7 @@ const Signup = () => {
                   Must be at least 6 characters long
                 </p>
               </div>
-              
+
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creating account...' : 'Create account'}
               </Button>
